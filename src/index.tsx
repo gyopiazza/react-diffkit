@@ -24,7 +24,6 @@ import {
   type DiffTagClasses,
   mergeHTMLWithDiff,
   parseHTML,
-} from './merge-highlighted-html.js';
 
 type IntrinsicElements = JSX.IntrinsicElements;
 
@@ -109,6 +108,11 @@ export interface ReactDiffViewerProps {
     additionalPrefix: LineNumberPrefix;
     styles: ReactDiffViewerStyles;
   }) => ReactElement;
+  //  render widgets after a line
+  renderLineWidgets?: (data: {
+    lineNumber: number;
+    prefix: LineNumberPrefix;
+  }) => ReactElement | undefined;
   // Array of line ids to highlight lines.
   highlightLines?: string[];
   // Style overrides.
@@ -542,33 +546,48 @@ class DiffViewer extends React.Component<
     { left, right }: LineInformation,
     index: number,
   ): ReactElement => {
+    const widgetsLeft = this.props.renderLineWidgets?.({
+      lineNumber: left.lineNumber,
+      prefix: LineNumberPrefix.LEFT,
+    });
+    const widgetsRight = this.props.renderLineWidgets?.({
+      lineNumber: right.lineNumber,
+      prefix: LineNumberPrefix.RIGHT,
+    });
     return (
-      <tr
-        key={index}
-        className={cn(
-          this.styles.line,
-          this.props.lineClassNames?.({ left, right }),
+      <React.Fragment key={index}>
+        <tr
+          className={cn(
+            this.styles.line,
+            this.props.lineClassNames?.({ left, right }),
+          )}
+        >
+          {this.renderLine(
+            left.lineNumber,
+            left.type,
+            LineNumberPrefix.LEFT,
+            left.value,
+            undefined,
+            undefined,
+            left.renderedHTML,
+          )}
+          {this.renderLine(
+            right.lineNumber,
+            right.type,
+            LineNumberPrefix.RIGHT,
+            right.value,
+            undefined,
+            undefined,
+            right.renderedHTML,
+          )}
+        </tr>
+        {(Boolean(widgetsLeft) || Boolean(widgetsRight)) && (
+          <tr>
+            <td colSpan={3}>{widgetsLeft}</td>
+            <td colSpan={3}>{widgetsRight}</td>
+          </tr>
         )}
-      >
-        {this.renderLine(
-          left.lineNumber,
-          left.type,
-          LineNumberPrefix.LEFT,
-          left.value,
-          undefined,
-          undefined,
-          left.renderedHTML,
-        )}
-        {this.renderLine(
-          right.lineNumber,
-          right.type,
-          LineNumberPrefix.RIGHT,
-          right.value,
-          undefined,
-          undefined,
-          right.renderedHTML,
-        )}
-      </tr>
+      </React.Fragment>
     );
   };
 
@@ -585,6 +604,15 @@ class DiffViewer extends React.Component<
     index: number,
   ): ReactElement => {
     let content;
+    const widgetsLeft = this.props.renderLineWidgets?.({
+      lineNumber: left.lineNumber,
+      prefix: LineNumberPrefix.LEFT,
+    });
+    const widgetsRight = this.props.renderLineWidgets?.({
+      lineNumber: right.lineNumber,
+      prefix: LineNumberPrefix.RIGHT,
+    });
+    let widgets: ReactElement;
     if (left.type === DiffType.REMOVED && right.type === DiffType.ADDED) {
       return (
         <React.Fragment key={index}>
@@ -604,6 +632,11 @@ class DiffViewer extends React.Component<
               left.renderedHTML,
             )}
           </tr>
+          {Boolean(widgetsLeft) && (
+            <tr>
+              <td colSpan={6}>{widgetsLeft}</td>
+            </tr>
+          )}
           <tr
             className={cn(
               this.styles.line,
@@ -620,6 +653,11 @@ class DiffViewer extends React.Component<
               right.renderedHTML,
             )}
           </tr>
+          {Boolean(widgetsRight) && (
+            <tr>
+              <td colSpan={6}>{widgetsRight}</td>
+            </tr>
+          )}
         </React.Fragment>
       );
     }
@@ -633,6 +671,7 @@ class DiffViewer extends React.Component<
         undefined,
         left.renderedHTML,
       );
+      widgets = widgetsLeft;
     }
     if (left.type === DiffType.DEFAULT) {
       content = this.renderLine(
@@ -644,6 +683,7 @@ class DiffViewer extends React.Component<
         LineNumberPrefix.RIGHT,
         left.renderedHTML,
       );
+      widgets = widgetsLeft;
     }
     if (right.type === DiffType.ADDED) {
       content = this.renderLine(
@@ -655,18 +695,26 @@ class DiffViewer extends React.Component<
         undefined,
         right.renderedHTML,
       );
+      widgets = widgetsRight;
     }
 
     return (
-      <tr
-        key={index}
-        className={cn(
-          this.styles.line,
-          this.props.lineClassNames?.({ left, right }),
+      <>
+        <tr
+          key={index}
+          className={cn(
+            this.styles.line,
+            this.props.lineClassNames?.({ left, right }),
+          )}
+        >
+          {content}
+        </tr>
+        {Boolean(widgets) && (
+          <tr>
+            <td colSpan={6}>{widgets}</td>
+          </tr>
         )}
-      >
-        {content}
-      </tr>
+      </>
     );
   };
 
