@@ -1,19 +1,19 @@
+import { Component, MouseEvent } from 'react';
 import './style.scss';
-import {Component, MouseEvent} from 'react';
 
-import ReactDiff, {DiffMethod} from '../../src/index';
-import logo from '../../logo.png';
 import cn from 'classnames';
-import {createRoot} from "react-dom/client";
+import { createRoot } from 'react-dom/client';
+import logo from '../../logo.png';
+import ReactDiff, { DiffMethod } from '../../src/index';
 
-import oldJs from './diff/javascript/old.rjs?raw';
 import newJs from './diff/javascript/new.rjs?raw';
+import oldJs from './diff/javascript/old.rjs?raw';
 
-import oldYaml from './diff/massive/old.yaml?raw';
 import newYaml from './diff/massive/new.yaml?raw';
+import oldYaml from './diff/massive/old.yaml?raw';
 
-import oldJson from './diff/json/old.json';
 import newJson from './diff/json/new.json';
+import oldJson from './diff/json/old.json';
 
 interface ExampleState {
   splitView?: boolean;
@@ -26,6 +26,8 @@ interface ExampleState {
   compareMethod?: DiffMethod;
   dataType: string;
   customGutter?: boolean;
+  infiniteLoading?: boolean;
+  loadingElement?: boolean;
 }
 
 const P = (window as any).Prism;
@@ -42,7 +44,9 @@ class Example extends Component<{}, ExampleState> {
       customGutter: true,
       enableSyntaxHighlighting: true,
       dataType: 'javascript',
-      compareMethod: DiffMethod.CHARS
+      compareMethod: DiffMethod.CHARS,
+      infiniteLoading: true,
+      loadingElement: true,
     };
   }
 
@@ -75,17 +79,17 @@ class Example extends Component<{}, ExampleState> {
   };
 
   public render(): JSX.Element {
-    let oldValue: string | Record<string, unknown> = ''
+    let oldValue: string | Record<string, unknown> = '';
     let newValue: string | Record<string, unknown> = '';
     if (this.state.dataType === 'json') {
-      oldValue = oldJson
-      newValue = newJson
+      oldValue = oldJson;
+      newValue = newJson;
     } else if (this.state.dataType === 'javascript') {
-      oldValue = oldJs
-      newValue = newJs
+      oldValue = oldJs;
+      newValue = newJs;
     } else {
-      oldValue = oldYaml
-      newValue = newYaml
+      oldValue = oldYaml;
+      newValue = newYaml;
     }
 
     return (
@@ -107,9 +111,7 @@ class Example extends Component<{}, ExampleState> {
             Featuring split view, inline view, word diff, line highlight and
             more.
           </p>
-          <p>
-            This documentation is for the `next` release branch, e.g. v4.x
-          </p>
+          <p>This documentation is for the `next` release branch, e.g. v4.x</p>
           <div className="cta">
             <a href="https://github.com/aeolun/react-diff-viewer-continued#install">
               <button type="button" className="btn btn-primary btn-lg">
@@ -177,8 +179,7 @@ class Example extends Component<{}, ExampleState> {
                   checked={this.state.columnHeaders}
                   onChange={() => {
                     this.setState({
-                      columnHeaders:
-                        !this.state.columnHeaders,
+                      columnHeaders: !this.state.columnHeaders,
                     });
                   }}
                 />
@@ -217,13 +218,46 @@ class Example extends Component<{}, ExampleState> {
               <span>Line Numbers</span>
             </div>
             <div>
+              <label className={'switch'}>
+                <input
+                  type="checkbox"
+                  checked={this.state.infiniteLoading}
+                  onChange={() => {
+                    this.setState({
+                      infiniteLoading: !this.state.infiniteLoading,
+                    });
+                  }}
+                />
+                <span className="slider round"></span>
+              </label>
+              <span>Infinite Loading</span>
+            </div>
+            <div>
+              <label className={'switch'}>
+                <input
+                  type="checkbox"
+                  checked={this.state.loadingElement}
+                  onChange={() => {
+                    this.setState({
+                      loadingElement: !this.state.loadingElement,
+                    });
+                  }}
+                />
+                <span className="slider round"></span>
+              </label>
+              <span>Show Loading Text</span>
+            </div>
+            <div>
               <label className={'select'}>
                 <select
                   value={this.state.dataType}
                   onChange={(e) => {
                     this.setState({
                       dataType: e.currentTarget.value,
-                      compareMethod: e.currentTarget.value === 'json' ? DiffMethod.JSON : DiffMethod.CHARS
+                      compareMethod:
+                        e.currentTarget.value === 'json'
+                          ? DiffMethod.JSON
+                          : DiffMethod.CHARS,
                     });
                   }}
                 >
@@ -285,9 +319,38 @@ class Example extends Component<{}, ExampleState> {
                 : undefined
             }
             useDarkTheme={this.state.theme === 'dark'}
-            summary={this.state.compareMethod === DiffMethod.JSON ? 'package.json' : 'webpack.config.js'}
-            leftTitle={this.state.columnHeaders ? `master@2178133 - pushed 2 hours ago.` : undefined}
-            rightTitle={this.state.columnHeaders ? `master@64207ee - pushed 13 hours ago.` : undefined}
+            summary={
+              this.state.compareMethod === DiffMethod.JSON
+                ? 'package.json'
+                : 'webpack.config.js'
+            }
+            leftTitle={
+              this.state.columnHeaders
+                ? `master@2178133 - pushed 2 hours ago.`
+                : undefined
+            }
+            rightTitle={
+              this.state.columnHeaders
+                ? `master@64207ee - pushed 13 hours ago.`
+                : undefined
+            }
+            infiniteLoading={this.state.infiniteLoading && {
+              pageSize: 20,
+              containerHeight: '70vh'
+            }}
+            loadingElement={this.state.loadingElement && (() => (
+              <div style={{
+                width: '100%',
+                height: '100%',
+                position: 'absolute',
+                zIndex: '1',
+                background: '#00000061'
+              }}>
+                <p style={{ position: 'absolute', top: '50%', right: '50%', transform: 'translate(50%,-50%)' }}>
+                  Loading Content...
+                </p>
+              </div>
+            ))}
           />
         </div>
         <footer>
