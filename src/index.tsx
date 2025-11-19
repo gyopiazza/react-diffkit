@@ -52,6 +52,8 @@ export interface ReactDiffViewerProps {
   showDiffOnly?: boolean;
   // Render prop to format final string before displaying them in the UI.
   renderContent?: (source: string) => ReactElement;
+  // Additional class names for the line.
+  lineClassNames?: (line: LineInformation) => string;
   // Render prop to format code fold message.
   codeFoldMessageRenderer?: (
     totalFoldedLines: number,
@@ -194,7 +196,7 @@ class DiffViewer extends React.Component<
       const content = renderer
         ? renderer(wordDiff.value as string)
         : (typeof wordDiff.value === 'string'
-          ? wordDiff.value
+        ? wordDiff.value
           // If wordDiff.value is DiffInformation, we don't handle it, unclear why. See c0c99f5712.
           : undefined);
 
@@ -354,7 +356,7 @@ class DiffViewer extends React.Component<
               ? "Added line"
               : removed && !hasWordDiff
                 ? "Removed line"
-                : undefined
+              : undefined
           }
         >
           <ElementType className={this.styles.contentText}>
@@ -378,7 +380,13 @@ class DiffViewer extends React.Component<
     index: number,
   ): ReactElement => {
     return (
-      <tr key={index} className={this.styles.line}>
+      <tr
+        key={index}
+        className={cn(
+          this.styles.line,
+          this.props.lineClassNames?.({ left, right }),
+        )}
+      >
         {this.renderLine(
           left.lineNumber,
           left.type,
@@ -411,7 +419,12 @@ class DiffViewer extends React.Component<
     if (left.type === DiffType.REMOVED && right.type === DiffType.ADDED) {
       return (
         <React.Fragment key={index}>
-          <tr className={this.styles.line}>
+          <tr
+            className={cn(
+              this.styles.line,
+              this.props.lineClassNames?.({ left }),
+            )}
+          >
             {this.renderLine(
               left.lineNumber,
               left.type,
@@ -420,7 +433,12 @@ class DiffViewer extends React.Component<
               null,
             )}
           </tr>
-          <tr className={this.styles.line}>
+          <tr
+            className={cn(
+              this.styles.line,
+              this.props.lineClassNames?.({ right }),
+            )}
+          >
             {this.renderLine(
               null,
               right.type,
@@ -463,7 +481,13 @@ class DiffViewer extends React.Component<
     }
 
     return (
-      <tr key={index} className={this.styles.line}>
+      <tr
+        key={index}
+        className={cn(
+          this.styles.line,
+          this.props.lineClassNames?.({ left, right }),
+        )}
+      >
         {content}
       </tr>
     );
