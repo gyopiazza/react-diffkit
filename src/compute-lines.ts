@@ -134,14 +134,13 @@ const computeLineInformation = (
   linesOffset = 0,
   showLines: string[] = [],
 ): ComputedLineInformation => {
-  let diffArray: Diff.Change[] = [];
+  let diffArray: diff.Change[] = [];
 
   // Use diffLines for strings, and diffJson for objects...
   if (typeof oldString === "string" && typeof newString === "string") {
     diffArray = diff.diffLines(oldString, newString, {
       newlineIsToken: false,
       ignoreWhitespace: false,
-      ignoreCase: false,
     });
   } else {
     diffArray = diff.diffJson(oldString, newString);

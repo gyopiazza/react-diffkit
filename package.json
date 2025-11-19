@@ -46,7 +46,7 @@
     "@emotion/css": "^11.13.5",
     "@emotion/react": "^11.14.0",
     "classnames": "^2.5.1",
-    "diff": "^5.2.0",
+    "diff": "^8.0.2",
     "memoize-one": "^6.0.0"
   },
   "devDependencies": {
