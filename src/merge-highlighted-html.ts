@@ -248,6 +248,40 @@ export function injectDiffTags(
 }
 
 /**
+ * Parse CSS string to React style object
+ * Converts "color: red; font-size: 14px" to { color: 'red', fontSize: '14px' }
+ */
+function parseCSSStringToObject(cssString: string): Record<string, string> {
+  const styleObject: Record<string, string> = {};
+
+  if (!cssString || typeof cssString !== 'string') {
+    return styleObject;
+  }
+
+  // Split by semicolon and process each property
+  const declarations = cssString.split(';').filter(d => d.trim());
+
+  for (const declaration of declarations) {
+    const colonIndex = declaration.indexOf(':');
+    if (colonIndex === -1) continue;
+
+    const property = declaration.substring(0, colonIndex).trim();
+    const value = declaration.substring(colonIndex + 1).trim();
+
+    if (!property || !value) continue;
+
+    // Convert kebab-case to camelCase (e.g., font-size -> fontSize)
+    const camelCaseProperty = property.replace(/-([a-z])/g, (_, letter) =>
+      letter.toUpperCase()
+    );
+
+    styleObject[camelCaseProperty] = value;
+  }
+
+  return styleObject;
+}
+
+/**
  * Convert HTML tree to React elements
  */
 export function treeToReactElements(tree: HTMLNode[]): ReactElement[] {
@@ -268,8 +302,8 @@ function nodeToReactElement(node: HTMLNode, key: number | string): ReactElement 
       if (attrName === "class") {
         props.className = attrValue;
       } else if (attrName === "style") {
-        // Parse inline styles if needed
-        props.style = attrValue;
+        // Parse inline CSS string to React style object
+        props.style = parseCSSStringToObject(attrValue);
       } else {
         props[attrName] = attrValue;
       }
