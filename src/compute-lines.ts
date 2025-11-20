@@ -25,6 +25,8 @@ export interface DiffInformation {
   value?: string | DiffInformation[];
   lineNumber?: number;
   type?: DiffType;
+  // Pre-rendered HTML for this line (when oldRenderedLines/newRenderedLines are provided)
+  renderedHTML?: string;
 }
 
 export interface LineInformation {
@@ -123,6 +125,8 @@ const computeDiff = (
  * @param lineCompareMethod JsDiff text diff method from https://github.com/kpdecker/jsdiff/tree/v4.0.1#api
  * @param linesOffset line number to start counting from
  * @param showLines lines that are always shown, regardless of diff
+ * @param oldRenderedLines Pre-rendered HTML for old string (optional)
+ * @param newRenderedLines Pre-rendered HTML for new string (optional)
  */
 const computeLineInformation = (
   oldString: string | Record<string, unknown>,
@@ -133,6 +137,8 @@ const computeLineInformation = (
     | ((oldStr: string, newStr: string) => diff.Change[]) = DiffMethod.CHARS,
   linesOffset = 0,
   showLines: string[] = [],
+  oldRenderedLines?: string,
+  newRenderedLines?: string,
 ): ComputedLineInformation => {
   let diffArray: diff.Change[] = [];
 
@@ -145,6 +151,10 @@ const computeLineInformation = (
   } else {
     diffArray = diff.diffJson(oldString, newString);
   }
+
+  // Split pre-rendered HTML by lines if provided
+  const oldHTMLLines = oldRenderedLines ? oldRenderedLines.split('\n') : [];
+  const newHTMLLines = newRenderedLines ? newRenderedLines.split('\n') : [];
 
   let rightLineNumber = linesOffset;
   let leftLineNumber = linesOffset;
@@ -178,6 +188,10 @@ const computeLineInformation = (
             left.lineNumber = leftLineNumber;
             left.type = DiffType.REMOVED;
             left.value = line || " ";
+            // Attach pre-rendered HTML if available (1-indexed to 0-indexed)
+            if (oldHTMLLines.length > 0 && leftLineNumber > 0) {
+              left.renderedHTML = oldHTMLLines[leftLineNumber - 1];
+            }
             // When the current line is of type REMOVED, check the next item in
             // the diff array whether it is of type ADDED. If true, the current
             // diff will be marked as both REMOVED and ADDED. Meaning, the
@@ -206,6 +220,10 @@ const computeLineInformation = (
                 ignoreDiffIndexes.push(`${diffIndex + 1}-${lineIndex}`);
 
                 right.lineNumber = lineNumber;
+                // Attach pre-rendered HTML if available (1-indexed to 0-indexed)
+                if (newHTMLLines.length > 0 && lineNumber > 0) {
+                  right.renderedHTML = newHTMLLines[lineNumber - 1];
+                }
                 if (left.value === rightValue) {
                   // The new value is exactly the same as the old
                   countAsChange = false;
@@ -235,6 +253,10 @@ const computeLineInformation = (
             right.lineNumber = rightLineNumber;
             right.type = DiffType.ADDED;
             right.value = line;
+            // Attach pre-rendered HTML if available (1-indexed to 0-indexed)
+            if (newHTMLLines.length > 0 && rightLineNumber > 0) {
+              right.renderedHTML = newHTMLLines[rightLineNumber - 1];
+            }
           }
           if (countAsChange && !evaluateOnlyFirstLine) {
             if (!diffLines.includes(counter)) {
@@ -248,9 +270,17 @@ const computeLineInformation = (
           left.lineNumber = leftLineNumber;
           left.type = DiffType.DEFAULT;
           left.value = line;
+          // Attach pre-rendered HTML if available (1-indexed to 0-indexed)
+          if (oldHTMLLines.length > 0 && leftLineNumber > 0) {
+            left.renderedHTML = oldHTMLLines[leftLineNumber - 1];
+          }
           right.lineNumber = rightLineNumber;
           right.type = DiffType.DEFAULT;
           right.value = line;
+          // Attach pre-rendered HTML if available (1-indexed to 0-indexed)
+          if (newHTMLLines.length > 0 && rightLineNumber > 0) {
+            right.renderedHTML = newHTMLLines[rightLineNumber - 1];
+          }
         }
 
         if (

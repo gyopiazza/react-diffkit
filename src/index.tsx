@@ -19,6 +19,11 @@ import computeStyles, {
 } from "./styles.js";
 
 import { Fold } from "./fold.js";
+import {
+  mergeHTMLWithDiff,
+  type ChangeRange,
+  parseHTML,
+} from "./merge-highlighted-html.js";
 
 type IntrinsicElements = JSX.IntrinsicElements;
 
@@ -50,7 +55,22 @@ export interface ReactDiffViewerProps {
   alwaysShowLines?: string[];
   // Show only diff between the two values.
   showDiffOnly?: boolean;
-  // Render prop to format final string before displaying them in the UI.
+  /**
+   * Pre-rendered syntax-highlighted HTML for old value.
+   * Should be a string with newlines separating each line.
+   * When provided, replaces renderContent prop.
+   */
+  oldRenderedLines?: string;
+  /**
+   * Pre-rendered syntax-highlighted HTML for new value.
+   * Should be a string with newlines separating each line.
+   * When provided, replaces renderContent prop.
+   */
+  newRenderedLines?: string;
+  /**
+   * Render prop to format final string before displaying them in the UI.
+   * @deprecated Use oldRenderedLines and newRenderedLines instead for better multi-line syntax highlighting support.
+   */
   renderContent?: (source: string) => ReactElement;
   // Additional class names for the line.
   lineClassNames?: (line: LineInformation) => string;
@@ -187,11 +207,73 @@ class DiffViewer extends React.Component<
    *
    * @param diffArray Word diff information derived from line information.
    * @param renderer Optional renderer to format diff words. Useful for syntax highlighting.
+   * @param renderedHTML Optional pre-rendered HTML for this line (when using oldRenderedLines/newRenderedLines)
    */
   private renderWordDiff = (
     diffArray: DiffInformation[],
     renderer?: (chunk: string) => JSX.Element,
+    renderedHTML?: string,
   ): ReactElement[] => {
+    // If we have pre-rendered HTML, use the HTML merger
+    if (renderedHTML) {
+      // Convert DiffInformation[] to ChangeRange[]
+      const changes: ChangeRange[] = [];
+      let currentPos = 0;
+
+      for (const wordDiff of diffArray) {
+        const text = wordDiff.value as string;
+        const length = text ? text.length : 0;
+
+        if (wordDiff.type === DiffType.ADDED) {
+          changes.push({
+            start: currentPos,
+            end: currentPos + length,
+            type: "added",
+          });
+        } else if (wordDiff.type === DiffType.REMOVED) {
+          changes.push({
+            start: currentPos,
+            end: currentPos + length,
+            type: "removed",
+          });
+        }
+
+        currentPos += length;
+      }
+
+      // Merge HTML with diff tags
+      const mergedElements = mergeHTMLWithDiff(renderedHTML, changes);
+
+      // Apply word diff styles to the merged elements
+      return mergedElements.map((element, i) => {
+        if (React.isValidElement(element)) {
+          const elementType = element.type;
+          if (elementType === "ins") {
+            return React.cloneElement(element as ReactElement<{ className?: string }>, {
+              key: i,
+              className: cn(
+                (element.props as { className?: string }).className,
+                this.styles.wordDiff,
+                this.styles.wordAdded,
+              ),
+            } as any);
+          }
+          if (elementType === "del") {
+            return React.cloneElement(element as ReactElement<{ className?: string }>, {
+              key: i,
+              className: cn(
+                (element.props as { className?: string }).className,
+                this.styles.wordDiff,
+                this.styles.wordRemoved,
+              ),
+            } as any);
+          }
+        }
+        return element;
+      });
+    }
+
+    // Original implementation for when no pre-rendered HTML is available
     return diffArray.map((wordDiff, i): JSX.Element => {
       const content = renderer
         ? renderer(wordDiff.value as string)
@@ -238,6 +320,7 @@ class DiffViewer extends React.Component<
    * @param additionalLineNumber Additional line number to be shown. Useful for rendering inline
    *  diff view. Right line number will be passed as additionalLineNumber.
    * @param additionalPrefix Similar to prefix but for additional line number.
+   * @param renderedHTML Pre-rendered HTML for this line (optional).
    */
   private renderLine = (
     lineNumber: number,
@@ -246,6 +329,7 @@ class DiffViewer extends React.Component<
     value: string | DiffInformation[],
     additionalLineNumber?: number,
     additionalPrefix?: LineNumberPrefix,
+    renderedHTML?: string,
   ): ReactElement => {
     const lineNumberTemplate = `${prefix}-${lineNumber}`;
     const additionalLineNumberTemplate = `${additionalPrefix}-${additionalLineNumber}`;
@@ -257,11 +341,19 @@ class DiffViewer extends React.Component<
     const changed = type === DiffType.CHANGED;
     let content;
     const hasWordDiff = Array.isArray(value);
+
+    // Priority: renderedHTML > renderContent > plain value
     if (hasWordDiff) {
-      content = this.renderWordDiff(value, this.props.renderContent);
+      // For word diffs, pass the rendered HTML to merge with diff tags
+      content = this.renderWordDiff(value, this.props.renderContent, renderedHTML);
+    } else if (renderedHTML) {
+      // Use pre-rendered HTML directly for non-word-diff lines
+      content = <span dangerouslySetInnerHTML={{ __html: renderedHTML }} />;
     } else if (this.props.renderContent) {
-      content = this.props.renderContent(value);
+      // Fall back to renderContent prop (deprecated)
+      content = this.props.renderContent(value as string);
     } else {
+      // Final fallback to plain text
       content = value;
     }
 
@@ -392,12 +484,18 @@ class DiffViewer extends React.Component<
           left.type,
           LineNumberPrefix.LEFT,
           left.value,
+          undefined,
+          undefined,
+          left.renderedHTML,
         )}
         {this.renderLine(
           right.lineNumber,
           right.type,
           LineNumberPrefix.RIGHT,
           right.value,
+          undefined,
+          undefined,
+          right.renderedHTML,
         )}
       </tr>
     );
@@ -431,6 +529,8 @@ class DiffViewer extends React.Component<
               LineNumberPrefix.LEFT,
               left.value,
               null,
+              undefined,
+              left.renderedHTML,
             )}
           </tr>
           <tr
@@ -446,6 +546,7 @@ class DiffViewer extends React.Component<
               right.value,
               right.lineNumber,
               LineNumberPrefix.RIGHT,
+              right.renderedHTML,
             )}
           </tr>
         </React.Fragment>
@@ -458,6 +559,8 @@ class DiffViewer extends React.Component<
         LineNumberPrefix.LEFT,
         left.value,
         null,
+        undefined,
+        left.renderedHTML,
       );
     }
     if (left.type === DiffType.DEFAULT) {
@@ -468,6 +571,7 @@ class DiffViewer extends React.Component<
         left.value,
         right.lineNumber,
         LineNumberPrefix.RIGHT,
+        left.renderedHTML,
       );
     }
     if (right.type === DiffType.ADDED) {
@@ -477,6 +581,8 @@ class DiffViewer extends React.Component<
         LineNumberPrefix.RIGHT,
         right.value,
         right.lineNumber,
+        undefined,
+        right.renderedHTML,
       );
     }
 
@@ -592,6 +698,8 @@ class DiffViewer extends React.Component<
       disableWordDiff,
       compareMethod,
       linesOffset,
+      oldRenderedLines,
+      newRenderedLines,
     } = this.props;
     const { lineInformation, diffLines } = computeLineInformation(
       oldValue,
@@ -600,6 +708,8 @@ class DiffViewer extends React.Component<
       compareMethod,
       linesOffset,
       this.props.alwaysShowLines,
+      oldRenderedLines,
+      newRenderedLines,
     );
 
     const extraLines =
