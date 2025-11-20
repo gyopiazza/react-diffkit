@@ -819,5 +819,10 @@ class DiffViewer extends React.Component<
 }
 
 export default DiffViewer;
-export { DiffMethod };
-export type { ReactDiffViewerStylesOverride };
+export { DiffMethod, DiffType };
+export type {
+  ReactDiffViewerStylesOverride,
+  ReactDiffViewerStyles,
+  DiffInformation,
+  LineInformation,
+};
