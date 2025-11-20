@@ -51,7 +51,7 @@ export interface ReactDiffViewerProps {
   // Show only diff between the two values.
   showDiffOnly?: boolean;
   // Render prop to format final string before displaying them in the UI.
-  renderContent?: (source: string) => ReactElement;
+  renderContent?: (source: string) => ReactElement | Promise<ReactElement>;
   // Additional class names for the line.
   lineClassNames?: (line: LineInformation) => string;
   // Render prop to format code fold message.
@@ -97,6 +97,8 @@ export interface ReactDiffViewerState {
   // Array holding the expanded code folding.
   expandedBlocks?: number[];
   noSelect?: "left" | "right";
+  // Cache for async rendered content
+  renderedContent?: Map<string, ReactElement>;
 }
 
 class DiffViewer extends React.Component<
@@ -127,6 +129,7 @@ class DiffViewer extends React.Component<
     this.state = {
       expandedBlocks: [],
       noSelect: undefined,
+      renderedContent: new Map(),
     };
   }
 
@@ -190,15 +193,35 @@ class DiffViewer extends React.Component<
    */
   private renderWordDiff = (
     diffArray: DiffInformation[],
-    renderer?: (chunk: string) => JSX.Element,
+    renderer?: (chunk: string) => JSX.Element | Promise<JSX.Element>,
   ): ReactElement[] => {
     return diffArray.map((wordDiff, i): JSX.Element => {
-      const content = renderer
-        ? renderer(wordDiff.value as string)
-        : (typeof wordDiff.value === 'string'
-        ? wordDiff.value
-          // If wordDiff.value is DiffInformation, we don't handle it, unclear why. See c0c99f5712.
-          : undefined);
+      const value = typeof wordDiff.value === 'string' ? wordDiff.value : undefined;
+      const cacheKey = `word-${i}-${value}`;
+
+      let content: ReactElement | string | undefined;
+      if (renderer && value) {
+        const cached = this.state.renderedContent?.get(cacheKey);
+        if (cached) {
+          content = cached;
+        } else {
+          const result = renderer(value);
+          if (result instanceof Promise) {
+            result.then(rendered => {
+              this.setState(prevState => {
+                const newMap = new Map(prevState.renderedContent);
+                newMap.set(cacheKey, rendered);
+                return { renderedContent: newMap };
+              });
+            });
+            content = value; // fallback while loading
+          } else {
+            content = result;
+          }
+        }
+      } else {
+        content = value;
+      }
 
       return wordDiff.type === DiffType.ADDED ? (
         <ins
@@ -260,7 +283,25 @@ class DiffViewer extends React.Component<
     if (hasWordDiff) {
       content = this.renderWordDiff(value, this.props.renderContent);
     } else if (this.props.renderContent) {
-      content = this.props.renderContent(value);
+      const cacheKey = `line-${lineNumberTemplate}-${value}`;
+      const cached = this.state.renderedContent?.get(cacheKey);
+      if (cached) {
+        content = cached;
+      } else {
+        const result = this.props.renderContent(value);
+        if (result instanceof Promise) {
+          result.then(rendered => {
+            this.setState(prevState => {
+              const newMap = new Map(prevState.renderedContent);
+              newMap.set(cacheKey, rendered);
+              return { renderedContent: newMap };
+            });
+          });
+          content = value; // fallback while loading
+        } else {
+          content = result;
+        }
+      }
     } else {
       content = value;
     }
