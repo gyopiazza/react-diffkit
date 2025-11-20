@@ -1,8 +1,8 @@
 {
-  "name": "react-diff-viewer-continued",
-  "version": "4.0.6",
+  "name": "react-diffkit",
+  "version": "0.1.0",
   "private": false,
-  "description": "Continuation of a simple and beautiful text diff viewer component made with diff and React",
+  "description": "A react diff viewer component",
   "keywords": [
     "review",
     "code-review",
@@ -13,7 +13,7 @@
     "react-component",
     "ui"
   ],
-  "repository": "git@github.com:aeolun/react-diff-viewer-continued.git",
+  "repository": "git@github.com:gyopiazza/react-diffkit.git",
   "license": "MIT",
   "authors": [
     "Pranesh Ravi<praneshpranesh@gmail.com>",
