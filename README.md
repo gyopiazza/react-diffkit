@@ -67,7 +67,8 @@ class Diff extends PureComponent {
 | renderGutter              | `(diffData) => ReactNode`                         | `undefined`                    | Function that can be used to render an extra gutter with various information next to the line number.                                                                                                                                                                                                                                                                                                            |
 | hideLineNumbers           | `boolean`                                         | `false`                        | Show and hide line numbers.                                                                                                                                                                                                                                                                                                                                                                                      |
 | alwaysShowLines           | `string[]`                                        | `[]`                           | List of lines to always be shown, regardless of diff status. Line number are prefixed with `L` and `R` for the left and right section of the diff viewer, respectively. For example, `L-20` means 20th line in the left pane. `extraLinesSurroundingDiff` applies to these lines as well.                                                                                                                        |
-| renderContent             | `function`                                        | `undefined`                    | Render Prop API to render code in the diff viewer. Helpful for [syntax highlighting](#syntax-highlighting)                                                                                                                                                                                                                                                                                                       |
+| oldRenderedLines          | `string`                                          | `undefined`                    | Pre-rendered syntax-highlighted HTML for old value. Should be a newline-separated string. See [syntax highlighting](#syntax-highlighting) for details.                                                                                                                                                                                                                                                           |
+| newRenderedLines          | `string`                                          | `undefined`                    | Pre-rendered syntax-highlighted HTML for new value. Should be a newline-separated string. See [syntax highlighting](#syntax-highlighting) for details.                                                                                                                                                                                                                                                           |
 | lineClassNames            | `function`                                        | `undefined`                    | Let's you add custom CSS classes to the lines. `(line: LineInformation) => string`                                                                                                                                                                                                                                                                                                                               |
 | onLineNumberClick         | `function`                                        | `undefined`                    | Event handler for line number click. `(lineId: string) => void`                                                                                                                                                                                                                                                                                                                                                  |
 | highlightLines            | `string[]`                                        | `[]`                           | List of lines to be highlighted. Works together with `onLineNumberClick`. Line number are prefixed with `L` and `R` for the left and right section of the diff viewer, respectively. For example, `L-20` means 20th line in the left pane. To highlight a range of line numbers, pass the prefixed line number as an array. For example, `[L-2, L-3, L-4, L-5]` will highlight the lines `2-5` in the left pane. |
@@ -86,26 +87,16 @@ class Diff extends PureComponent {
 
 ## Syntax Highlighting
 
-Syntax highlighting is a bit tricky when combined with diff. Here, React Diff Viewer provides a simple render prop API to handle syntax highlighting. Use `renderContent(content: string) => JSX.Element` and your favorite syntax highlighting library to achieve this.
+Syntax highlighting can be achieved by pre-rendering your code with your favorite syntax highlighting library and passing the resulting HTML strings via the `oldRenderedLines` and `newRenderedLines` props. Each prop should contain a newline-separated string of pre-rendered HTML for each line.
 
-An example using [Prism JS](https://prismjs.com)
-
-```html
-// Load Prism CSS
-<link
-  href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.15.0/prism.min.css"
-/>
-
-// Load Prism JS
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.15.0/prism.min.js"></script>
-```
+An example using [Prism JS](https://prismjs.com):
 
 ```javascript
 import React, { PureComponent } from 'react';
 import ReactDiffViewer from 'react-diff-viewer';
+import Prism from 'prismjs';
 
-const oldCode = `
-const a = 10
+const oldCode = `const a = 10
 const b = 10
 const c = () => console.log('foo')
 
@@ -113,34 +104,28 @@ if(a > 10) {
   console.log('bar')
 }
 
-console.log('done')
-`;
-const newCode = `
-const a = 10
+console.log('done')`;
+
+const newCode = `const a = 10
 const boo = 10
 
 if(a === 10) {
   console.log('bar')
-}
-`;
+}`;
 
 class Diff extends PureComponent {
-  highlightSyntax = (str) => (
-    <pre
-      style={{ display: 'inline' }}
-      dangerouslySetInnerHTML={{
-        __html: Prism.highlight(str, Prism.languages.javascript),
-      }}
-    />
-  );
-
   render = () => {
+    // Pre-render each code block with syntax highlighting
+    const oldHighlighted = Prism.highlight(oldCode, Prism.languages.javascript, 'javascript');
+    const newHighlighted = Prism.highlight(newCode, Prism.languages.javascript, 'javascript');
+
     return (
       <ReactDiffViewer
         oldValue={oldCode}
         newValue={newCode}
+        oldRenderedLines={oldHighlighted}
+        newRenderedLines={newHighlighted}
         splitView={true}
-        renderContent={this.highlightSyntax}
       />
     );
   };
@@ -312,15 +297,6 @@ if(a === 10) {
 `;
 
 class Diff extends PureComponent {
-  highlightSyntax = (str) => (
-    <span
-      style={{ display: 'inline' }}
-      dangerouslySetInnerHTML={{
-        __html: Prism.highlight(str, Prism.languages.javascript),
-      }}
-    />
-  );
-
   render = () => {
     const newStyles = {
       variables: {
@@ -337,13 +313,18 @@ class Diff extends PureComponent {
       },
     };
 
+    // Pre-render each code block with syntax highlighting
+    const oldHighlighted = Prism.highlight(oldCode, Prism.languages.javascript, 'javascript');
+    const newHighlighted = Prism.highlight(newCode, Prism.languages.javascript, 'javascript');
+
     return (
       <ReactDiffViewer
         styles={newStyles}
         oldValue={oldCode}
         newValue={newCode}
+        oldRenderedLines={oldHighlighted}
+        newRenderedLines={newHighlighted}
         splitView={true}
-        renderContent={this.highlightSyntax}
       />
     );
   };
