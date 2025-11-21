@@ -153,8 +153,8 @@ const computeLineInformation = (
   }
 
   // Split pre-rendered HTML by lines if provided
-  const oldHTMLLines = oldRenderedLines ? oldRenderedLines.split('\n') : [];
-  const newHTMLLines = newRenderedLines ? newRenderedLines.split('\n') : [];
+  const oldHTMLLines = oldRenderedLines ? oldRenderedLines.split("\n") : [];
+  const newHTMLLines = newRenderedLines ? newRenderedLines.split("\n") : [];
 
   let rightLineNumber = linesOffset;
   let leftLineNumber = linesOffset;

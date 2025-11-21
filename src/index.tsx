@@ -20,8 +20,9 @@ import computeStyles, {
 
 import { Fold } from "./fold.js";
 import {
-  mergeHTMLWithDiff,
   type ChangeRange,
+  type DiffTagClasses,
+  mergeHTMLWithDiff,
   parseHTML,
 } from "./merge-highlighted-html.js";
 
@@ -241,46 +242,30 @@ class DiffViewer extends React.Component<
         currentPos += length;
       }
 
-      // Merge HTML with diff tags
-      const mergedElements = mergeHTMLWithDiff(renderedHTML, changes);
+      // Prepare CSS classes to inject into diff tags
+      const cssClasses: DiffTagClasses = {
+        wordDiff: this.styles.wordDiff,
+        wordAdded: this.styles.wordAdded,
+        wordRemoved: this.styles.wordRemoved,
+      };
 
-      // Apply word diff styles to the merged elements
-      return mergedElements.map((element, i) => {
-        if (React.isValidElement(element)) {
-          const elementType = element.type;
-          if (elementType === "ins") {
-            return React.cloneElement(element as ReactElement<{ className?: string }>, {
-              key: i,
-              className: cn(
-                (element.props as { className?: string }).className,
-                this.styles.wordDiff,
-                this.styles.wordAdded,
-              ),
-            } as any);
-          }
-          if (elementType === "del") {
-            return React.cloneElement(element as ReactElement<{ className?: string }>, {
-              key: i,
-              className: cn(
-                (element.props as { className?: string }).className,
-                this.styles.wordDiff,
-                this.styles.wordRemoved,
-              ),
-            } as any);
-          }
-        }
-        return element;
-      });
+      // Merge HTML with diff tags (CSS classes are now baked into the tags)
+      const mergedElements = mergeHTMLWithDiff(
+        renderedHTML,
+        changes,
+        cssClasses,
+      );
+      return mergedElements;
     }
 
     // Original implementation for when no pre-rendered HTML is available
     return diffArray.map((wordDiff, i): JSX.Element => {
       const content = renderer
         ? renderer(wordDiff.value as string)
-        : (typeof wordDiff.value === 'string'
-        ? wordDiff.value
-          // If wordDiff.value is DiffInformation, we don't handle it, unclear why. See c0c99f5712.
-          : undefined);
+        : typeof wordDiff.value === "string"
+          ? wordDiff.value
+          : // If wordDiff.value is DiffInformation, we don't handle it, unclear why. See c0c99f5712.
+            undefined;
 
       return wordDiff.type === DiffType.ADDED ? (
         <ins
@@ -345,7 +330,11 @@ class DiffViewer extends React.Component<
     // Priority: renderedHTML > renderContent > plain value
     if (hasWordDiff) {
       // For word diffs, pass the rendered HTML to merge with diff tags
-      content = this.renderWordDiff(value, this.props.renderContent, renderedHTML);
+      content = this.renderWordDiff(
+        value,
+        this.props.renderContent,
+        renderedHTML,
+      );
     } else if (renderedHTML) {
       // Use pre-rendered HTML directly for non-word-diff lines
       content = <span dangerouslySetInnerHTML={{ __html: renderedHTML }} />;
@@ -448,7 +437,7 @@ class DiffViewer extends React.Component<
               ? "Added line"
               : removed && !hasWordDiff
                 ? "Removed line"
-              : undefined
+                : undefined
           }
         >
           <ElementType className={this.styles.contentText}>

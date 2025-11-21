@@ -101,20 +101,27 @@ export interface ChangeRange {
 }
 
 /**
+ * CSS classes to apply to diff tags
+ */
+export interface DiffTagClasses {
+  wordDiff?: string;
+  wordAdded?: string;
+  wordRemoved?: string;
+}
+
+/**
  * Inject diff tags (<ins>/<del>) into the HTML tree at the specified positions
  */
 export function injectDiffTags(
   tree: HTMLNode[],
   changes: ChangeRange[],
+  cssClasses?: DiffTagClasses,
 ): HTMLNode[] {
   if (changes.length === 0) {
     return tree;
   }
 
-  function splitTextNode(
-    node: HTMLNode,
-    splitPositions: number[],
-  ): HTMLNode[] {
+  function splitTextNode(node: HTMLNode, splitPositions: number[]): HTMLNode[] {
     if (node.type !== "text" || !node.text) {
       return [node];
     }
@@ -164,10 +171,29 @@ export function injectDiffTags(
   }
 
   function wrapWithDiffTag(nodes: HTMLNode[], changeType: string): HTMLNode {
+    const tagName =
+      changeType === "added"
+        ? "ins"
+        : changeType === "removed"
+          ? "del"
+          : "span";
+    const classNames: string[] = [];
+
+    // Add CSS classes if provided
+    if (cssClasses?.wordDiff) {
+      classNames.push(cssClasses.wordDiff);
+    }
+    if (changeType === "added" && cssClasses?.wordAdded) {
+      classNames.push(cssClasses.wordAdded);
+    }
+    if (changeType === "removed" && cssClasses?.wordRemoved) {
+      classNames.push(cssClasses.wordRemoved);
+    }
+
     return {
       type: "element",
-      tagName: changeType === "added" ? "ins" : changeType === "removed" ? "del" : "span",
-      attributes: {},
+      tagName,
+      attributes: classNames.length > 0 ? { class: classNames.join(" ") } : {},
       children: nodes,
     };
   }
@@ -178,8 +204,7 @@ export function injectDiffTags(
 
       // Find all changes that overlap with this text node
       const overlappingChanges = changes.filter(
-        (change) =>
-          !(change.end <= startPos || change.start >= endPos),
+        (change) => !(change.end <= startPos || change.start >= endPos),
       );
 
       if (overlappingChanges.length === 0) {
@@ -254,15 +279,15 @@ export function injectDiffTags(
 function parseCSSStringToObject(cssString: string): Record<string, string> {
   const styleObject: Record<string, string> = {};
 
-  if (!cssString || typeof cssString !== 'string') {
+  if (!cssString || typeof cssString !== "string") {
     return styleObject;
   }
 
   // Split by semicolon and process each property
-  const declarations = cssString.split(';').filter(d => d.trim());
+  const declarations = cssString.split(";").filter((d) => d.trim());
 
   for (const declaration of declarations) {
-    const colonIndex = declaration.indexOf(':');
+    const colonIndex = declaration.indexOf(":");
     if (colonIndex === -1) continue;
 
     const property = declaration.substring(0, colonIndex).trim();
@@ -272,7 +297,7 @@ function parseCSSStringToObject(cssString: string): Record<string, string> {
 
     // Convert kebab-case to camelCase (e.g., font-size -> fontSize)
     const camelCaseProperty = property.replace(/-([a-z])/g, (_, letter) =>
-      letter.toUpperCase()
+      letter.toUpperCase(),
     );
 
     styleObject[camelCaseProperty] = value;
@@ -288,7 +313,10 @@ export function treeToReactElements(tree: HTMLNode[]): ReactElement[] {
   return tree.map((node, index) => nodeToReactElement(node, index));
 }
 
-function nodeToReactElement(node: HTMLNode, key: number | string): ReactElement {
+function nodeToReactElement(
+  node: HTMLNode,
+  key: number | string,
+): ReactElement {
   if (node.type === "text") {
     return React.createElement(React.Fragment, { key }, node.text);
   }
@@ -324,17 +352,19 @@ function nodeToReactElement(node: HTMLNode, key: number | string): ReactElement 
  *
  * @param html The pre-rendered syntax-highlighted HTML
  * @param changes Array of change ranges from word-level diff
+ * @param cssClasses Optional CSS classes to apply to diff tags
  * @returns Array of React elements with diff tags injected
  */
 export function mergeHTMLWithDiff(
   html: string,
   changes: ChangeRange[],
+  cssClasses?: DiffTagClasses,
 ): ReactElement[] {
   if (!html) {
     return [];
   }
 
   const { tree, plainText } = parseHTML(html);
-  const treeWithDiffs = injectDiffTags(tree, changes);
+  const treeWithDiffs = injectDiffTags(tree, changes, cssClasses);
   return treeToReactElements(treeWithDiffs);
 }
