@@ -59,20 +59,13 @@ export interface ReactDiffViewerProps {
   /**
    * Pre-rendered syntax-highlighted HTML for old value.
    * Should be a string with newlines separating each line.
-   * When provided, replaces renderContent prop.
    */
   oldRenderedLines?: string;
   /**
    * Pre-rendered syntax-highlighted HTML for new value.
    * Should be a string with newlines separating each line.
-   * When provided, replaces renderContent prop.
    */
   newRenderedLines?: string;
-  /**
-   * Render prop to format final string before displaying them in the UI.
-   * @deprecated Use oldRenderedLines and newRenderedLines instead for better multi-line syntax highlighting support.
-   */
-  renderContent?: (source: string) => ReactElement;
   // Additional class names for the line.
   lineClassNames?: (line: LineInformation) => string;
   // Render prop to format code fold message.
@@ -207,12 +200,10 @@ class DiffViewer extends React.Component<
    * Maps over the word diff and constructs the required React elements to show word diff.
    *
    * @param diffArray Word diff information derived from line information.
-   * @param renderer Optional renderer to format diff words. Useful for syntax highlighting.
    * @param renderedHTML Optional pre-rendered HTML for this line (when using oldRenderedLines/newRenderedLines)
    */
   private renderWordDiff = (
     diffArray: DiffInformation[],
-    renderer?: (chunk: string) => JSX.Element,
     renderedHTML?: string,
   ): ReactElement[] => {
     // If we have pre-rendered HTML, use the HTML merger
@@ -260,9 +251,8 @@ class DiffViewer extends React.Component<
 
     // Original implementation for when no pre-rendered HTML is available
     return diffArray.map((wordDiff, i): JSX.Element => {
-      const content = renderer
-        ? renderer(wordDiff.value as string)
-        : typeof wordDiff.value === "string"
+      const content =
+        typeof wordDiff.value === "string"
           ? wordDiff.value
           : // If wordDiff.value is DiffInformation, we don't handle it, unclear why. See c0c99f5712.
             undefined;
@@ -327,22 +317,15 @@ class DiffViewer extends React.Component<
     let content;
     const hasWordDiff = Array.isArray(value);
 
-    // Priority: renderedHTML > renderContent > plain value
+    // Priority: renderedHTML > plain value
     if (hasWordDiff) {
       // For word diffs, pass the rendered HTML to merge with diff tags
-      content = this.renderWordDiff(
-        value,
-        this.props.renderContent,
-        renderedHTML,
-      );
+      content = this.renderWordDiff(value, renderedHTML);
     } else if (renderedHTML) {
       // Use pre-rendered HTML directly for non-word-diff lines
       content = <span dangerouslySetInnerHTML={{ __html: renderedHTML }} />;
-    } else if (this.props.renderContent) {
-      // Fall back to renderContent prop (deprecated)
-      content = this.props.renderContent(value as string);
     } else {
-      // Final fallback to plain text
+      // Fallback to plain text
       content = value;
     }
 

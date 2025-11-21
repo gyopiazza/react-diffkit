@@ -68,12 +68,6 @@ class Example extends Component<{}, ExampleState> {
     });
   };
 
-  private syntaxHighlight = (str: string): any => {
-    if (!str) return;
-    const language = P.highlight(str, P.languages.javascript);
-    return <span dangerouslySetInnerHTML={{ __html: language }} />;
-  };
-
   public render(): JSX.Element {
     let oldValue: string | Record<string, unknown> = ''
     let newValue: string | Record<string, unknown> = '';
@@ -277,11 +271,6 @@ class Example extends Component<{}, ExampleState> {
                       </td>
                     );
                   }
-                : undefined
-            }
-            renderContent={
-              this.state.enableSyntaxHighlighting
-                ? this.syntaxHighlight
                 : undefined
             }
             useDarkTheme={this.state.theme === 'dark'}

@@ -108,40 +108,6 @@ describe("Testing pre-rendered HTML content feature", () => {
     expect(deletions.length).toBeGreaterThan(0);
   });
 
-  it("Should handle renderContent prop alongside pre-rendered HTML", () => {
-    const oldCode = "line1\nline2";
-    const newCode = "line1\nmodified";
-
-    // Only provide pre-rendered HTML for first line
-    const oldRenderedLines = '<span class="rendered">line1</span>';
-    const newRenderedLines = '<span class="rendered">line1</span>';
-
-    // renderContent should be used for lines without pre-rendered HTML
-    const renderContent = (source: string) => (
-      <span className="fallback">{source}</span>
-    );
-
-    const { container } = render(
-      <DiffViewer
-        oldValue={oldCode}
-        newValue={newCode}
-        oldRenderedLines={oldRenderedLines}
-        newRenderedLines={newRenderedLines}
-        renderContent={renderContent}
-        splitView={true}
-        showDiffOnly={false}
-      />,
-    );
-
-    // First line should use pre-rendered HTML
-    const htmlContent = container.innerHTML;
-    expect(htmlContent).toContain('class="rendered"');
-
-    // Second line should exist in content
-    const content = container.textContent || "";
-    expect(content).toContain("line1");
-  });
-
   it("Should correctly split HTML by newlines", () => {
     const oldCode = "line1\nline2\nline3";
     const newCode = "line1\nline2\nline3";
