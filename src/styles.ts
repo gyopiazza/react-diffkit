@@ -151,7 +151,7 @@ export default (
         highlightGutterBackground: "#2d4077",
         codeFoldGutterBackground: "#262831",
         codeFoldBackground: "#262831",
-        emptyLineBackground: "#363946",
+        emptyLineBackground: "#2e303c",
         gutterColor: "#666c87",
         addedGutterColor: "#8c8c8c",
         removedGutterColor: "#8c8c8c",
