@@ -296,7 +296,7 @@ export default (
 
   const wordDiff = css({
     padding: 2,
-    display: "inline-flex",
+    display: "inline",
     borderRadius: 4,
     wordBreak: "break-all",
     label: "word-diff",

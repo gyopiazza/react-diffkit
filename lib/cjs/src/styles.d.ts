@@ -1,4 +1,4 @@
-import type { Interpolation } from '@emotion/react';
+import type { Interpolation } from "@emotion/react";
 export interface ReactDiffViewerStyles {
     diffContainer?: string;
     diffRemoved?: string;

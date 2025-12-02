@@ -74,30 +74,6 @@ function parseHTMLToTree(html: string): HTMLNode[] {
 }
 
 /**
- * Serialize an HTML node tree back to HTML string
- */
-function serializeNode(node: HTMLNode): string {
-  if (node.type === "text") {
-    return node.text || "";
-  }
-
-  if (node.type === "element") {
-    const { tagName = "span", attributes = {}, children = [] } = node;
-    const attrs = Object.entries(attributes)
-      .map(([key, value]) => `${key}="${value.replace(/"/g, "&quot;")}"`)
-      .join(" ");
-
-    const openTag = attrs ? `<${tagName} ${attrs}>` : `<${tagName}>`;
-    const childrenHTML = children.map(serializeNode).join("");
-    const closeTag = `</${tagName}>`;
-
-    return openTag + childrenHTML + closeTag;
-  }
-
-  return "";
-}
-
-/**
  * Check if an HTML node is a wrapper element that should be stripped
  * (e.g., <code>, <pre> tags that highlight.js adds)
  */
