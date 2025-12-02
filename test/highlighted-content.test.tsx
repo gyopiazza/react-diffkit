@@ -136,4 +136,121 @@ describe("Testing pre-rendered HTML content feature", () => {
     expect(htmlContent).toContain('class="c"');
     expect(htmlContent).toContain('class="d"');
   });
+
+  it("Should handle continuous HTML format (highlight.js style)", () => {
+    const oldCode = "const foo = 'bar';\nconst baz = 'qux';";
+    const newCode = "const foo = 'bar';\nconst baz = 'qux';";
+
+    // Continuous HTML like highlight.js outputs (wrapped in <code> tag)
+    const oldRenderedLines =
+      '<code class="hljs"><span class="hljs-keyword">const</span> foo = <span class="hljs-string">\'bar\'</span>;\n<span class="hljs-keyword">const</span> baz = <span class="hljs-string">\'qux\'</span>;</code>';
+    const newRenderedLines =
+      '<code class="hljs"><span class="hljs-keyword">const</span> foo = <span class="hljs-string">\'bar\'</span>;\n<span class="hljs-keyword">const</span> baz = <span class="hljs-string">\'qux\'</span>;</code>';
+
+    const { container } = render(
+      <DiffViewer
+        oldValue={oldCode}
+        newValue={newCode}
+        oldRenderedLines={oldRenderedLines}
+        newRenderedLines={newRenderedLines}
+        splitView={true}
+        showDiffOnly={false}
+      />,
+    );
+
+    // Verify syntax highlighting classes are present
+    const htmlContent = container.innerHTML;
+    expect(htmlContent).toContain("hljs-keyword");
+    expect(htmlContent).toContain("hljs-string");
+
+    // Verify wrapper tag is stripped (should not contain <code> tag)
+    expect(htmlContent).not.toContain('<code class="hljs"');
+  });
+
+  it("Should handle spans crossing multiple lines in continuous HTML", () => {
+    const oldCode = "// Comment line 1\n// Comment line 2";
+    const newCode = "// Comment line 1\n// Comment line 2";
+
+    // Simulate a multi-line comment span (like highlight.js might produce)
+    const oldRenderedLines =
+      '<code><span class="hljs-comment">// Comment line 1\n// Comment line 2</span></code>';
+    const newRenderedLines =
+      '<code><span class="hljs-comment">// Comment line 1\n// Comment line 2</span></code>';
+
+    const { container } = render(
+      <DiffViewer
+        oldValue={oldCode}
+        newValue={newCode}
+        oldRenderedLines={oldRenderedLines}
+        newRenderedLines={newRenderedLines}
+        splitView={true}
+        showDiffOnly={false}
+      />,
+    );
+
+    // Both lines should have the comment class
+    const htmlContent = container.innerHTML;
+    const commentMatches = htmlContent.match(/hljs-comment/g);
+    expect(commentMatches).toBeTruthy();
+    expect(commentMatches!.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("Should handle continuous HTML with word diff", () => {
+    const oldCode = "const foo = 'old';";
+    const newCode = "const foo = 'new';";
+
+    // Continuous HTML format
+    const oldRenderedLines =
+      '<code class="hljs"><span class="hljs-keyword">const</span> foo = <span class="hljs-string">\'old\'</span>;</code>';
+    const newRenderedLines =
+      '<code class="hljs"><span class="hljs-keyword">const</span> foo = <span class="hljs-string">\'new\'</span>;</code>';
+
+    const { container } = render(
+      <DiffViewer
+        oldValue={oldCode}
+        newValue={newCode}
+        oldRenderedLines={oldRenderedLines}
+        newRenderedLines={newRenderedLines}
+        splitView={true}
+        disableWordDiff={false}
+      />,
+    );
+
+    // Should have word-level diffs with syntax highlighting preserved
+    const htmlContent = container.innerHTML;
+    expect(htmlContent).toContain("hljs-keyword");
+    expect(htmlContent).toContain("hljs-string");
+
+    // Should have ins/del tags for word diff
+    const insertions = container.querySelectorAll("ins");
+    const deletions = container.querySelectorAll("del");
+    expect(insertions.length).toBeGreaterThan(0);
+    expect(deletions.length).toBeGreaterThan(0);
+  });
+
+  it("Should handle mixed continuous HTML with nested elements", () => {
+    const oldCode = "function test() {}";
+    const newCode = "function test() {}";
+
+    // Complex nested structure like highlight.js produces
+    const oldRenderedLines =
+      '<code><span class="hljs-keyword">function</span> <span class="hljs-title">test</span>() {}</code>';
+    const newRenderedLines =
+      '<code><span class="hljs-keyword">function</span> <span class="hljs-title">test</span>() {}</code>';
+
+    const { container } = render(
+      <DiffViewer
+        oldValue={oldCode}
+        newValue={newCode}
+        oldRenderedLines={oldRenderedLines}
+        newRenderedLines={newRenderedLines}
+        splitView={true}
+        showDiffOnly={false}
+      />,
+    );
+
+    const htmlContent = container.innerHTML;
+    expect(htmlContent).toContain("hljs-keyword");
+    expect(htmlContent).toContain("hljs-title");
+  });
 });

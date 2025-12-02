@@ -1,4 +1,5 @@
 import * as diff from "diff";
+import { processRenderedLines } from "./split-highlighted-html.js";
 
 const jsDiff: { [key: string]: any } = diff;
 
@@ -153,8 +154,9 @@ const computeLineInformation = (
   }
 
   // Split pre-rendered HTML by lines if provided
-  const oldHTMLLines = oldRenderedLines ? oldRenderedLines.split("\n") : [];
-  const newHTMLLines = newRenderedLines ? newRenderedLines.split("\n") : [];
+  // Handles both continuous HTML (highlight.js) and line-separated formats
+  const oldHTMLLines = processRenderedLines(oldRenderedLines);
+  const newHTMLLines = processRenderedLines(newRenderedLines);
 
   let rightLineNumber = linesOffset;
   let leftLineNumber = linesOffset;
