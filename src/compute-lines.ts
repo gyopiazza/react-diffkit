@@ -147,7 +147,7 @@ const computeLineInformation = (
   if (typeof oldString === "string" && typeof newString === "string") {
     diffArray = diff.diffLines(oldString, newString, {
       newlineIsToken: false,
-      ignoreWhitespace: false,
+      ignoreWhitespace: true,
     });
   } else {
     diffArray = diff.diffJson(oldString, newString);
