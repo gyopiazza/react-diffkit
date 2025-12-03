@@ -46,6 +46,8 @@ export interface ReactDiffViewerProps {
   disableWordDiff?: boolean;
   // JsDiff text diff method from https://github.com/kpdecker/jsdiff/tree/v4.0.1#api
   compareMethod?: DiffMethod | ((oldStr: string, newStr: string) => Change[]);
+  // Ignore whitespace-only changes when comparing lines.
+  ignoreWhitespace?: boolean;
   // Number of unmodified lines surrounding each line diff.
   extraLinesSurroundingDiff?: number;
   // Show/hide line number.
@@ -126,6 +128,7 @@ class DiffViewer extends React.Component<
     highlightLines: [],
     disableWordDiff: false,
     compareMethod: DiffMethod.CHARS,
+    ignoreWhitespace: true,
     styles: {},
     hideLineNumbers: false,
     extraLinesSurroundingDiff: 3,
@@ -682,6 +685,7 @@ class DiffViewer extends React.Component<
       this.props.alwaysShowLines,
       oldRenderedLines,
       newRenderedLines,
+      this.props.ignoreWhitespace,
     );
 
     const extraLines =

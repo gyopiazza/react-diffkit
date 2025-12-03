@@ -2,13 +2,10 @@ import { describe, expect, it } from "vitest";
 import { DiffMethod, computeLineInformation } from "../src/compute-lines";
 
 describe("Testing compute lines utils", (): void => {
-  it("It should not avoid trailing spaces", (): void => {
+  it("Should ignore whitespace-only changes within lines", (): void => {
     const oldCode = `test
-
-
-    `;
+ `;
     const newCode = `test
-
     `;
 
     expect(computeLineInformation(oldCode, newCode)).toMatchObject({
@@ -29,36 +26,16 @@ describe("Testing compute lines utils", (): void => {
           left: {
             lineNumber: 2,
             type: 0,
-            value: "",
-          },
-          right: {
-            lineNumber: 2,
-            type: 0,
-            value: "",
-          },
-        },
-        {
-          left: {
-            lineNumber: 3,
-            type: 2,
-            value: " ",
-          },
-          right: {},
-        },
-        {
-          left: {
-            lineNumber: 4,
-            type: 0,
             value: "    ",
           },
           right: {
-            lineNumber: 3,
+            lineNumber: 2,
             type: 0,
             value: "    ",
           },
         },
       ],
-      diffLines: [2],
+      diffLines: [],
     });
   });
 

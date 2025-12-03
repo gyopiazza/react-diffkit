@@ -128,6 +128,7 @@ const computeDiff = (
  * @param showLines lines that are always shown, regardless of diff
  * @param oldRenderedLines Pre-rendered HTML for old string (optional)
  * @param newRenderedLines Pre-rendered HTML for new string (optional)
+ * @param ignoreWhitespace Flag to enable/disable whitespace ignoring in line comparison
  */
 const computeLineInformation = (
   oldString: string | Record<string, unknown>,
@@ -140,6 +141,7 @@ const computeLineInformation = (
   showLines: string[] = [],
   oldRenderedLines?: string,
   newRenderedLines?: string,
+  ignoreWhitespace = true,
 ): ComputedLineInformation => {
   let diffArray: diff.Change[] = [];
 
@@ -147,7 +149,7 @@ const computeLineInformation = (
   if (typeof oldString === "string" && typeof newString === "string") {
     diffArray = diff.diffLines(oldString, newString, {
       newlineIsToken: false,
-      ignoreWhitespace: true,
+      ignoreWhitespace,
     });
   } else {
     diffArray = diff.diffJson(oldString, newString);
