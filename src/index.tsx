@@ -128,7 +128,7 @@ class DiffViewer extends React.Component<
     highlightLines: [],
     disableWordDiff: false,
     compareMethod: DiffMethod.CHARS,
-    ignoreWhitespace: true,
+    ignoreWhitespace: false,
     styles: {},
     hideLineNumbers: false,
     extraLinesSurroundingDiff: 3,
