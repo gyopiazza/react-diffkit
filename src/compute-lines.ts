@@ -141,7 +141,7 @@ const computeLineInformation = (
   showLines: string[] = [],
   oldRenderedLines?: string,
   newRenderedLines?: string,
-  ignoreWhitespace = true,
+  ignoreWhitespace = false,
 ): ComputedLineInformation => {
   let diffArray: diff.Change[] = [];
 
