@@ -61,6 +61,55 @@ describe("Testing compute lines utils", (): void => {
       diffLines: [2],
     });
   });
+  
+  it("Should ignore whitespace-only changes within lines", (): void => {
+    const oldCode = `test
+ `;
+    const newCode = `test
+    `;
+
+    expect(
+      computeLineInformation(
+        oldCode,
+        newCode,
+        false,
+        DiffMethod.CHARS,
+        0,
+        [],
+        undefined,
+        undefined,
+        true,
+      ),
+    ).toMatchObject({
+      lineInformation: [
+        {
+          left: {
+            lineNumber: 1,
+            type: 0,
+            value: "test",
+          },
+          right: {
+            lineNumber: 1,
+            type: 0,
+            value: "test",
+          },
+        },
+        {
+          left: {
+            lineNumber: 2,
+            type: 0,
+            value: "    ",
+          },
+          right: {
+            lineNumber: 2,
+            type: 0,
+            value: "    ",
+          },
+        },
+      ],
+      diffLines: [],
+    });
+  });
 
   it("Should identify line addition", (): void => {
     const oldCode = "test";
