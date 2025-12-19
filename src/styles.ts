@@ -30,6 +30,11 @@ export interface ReactDiffViewerStyles {
   noSelect?: string;
   splitView?: string;
   allExpandButton?: string;
+  collapsedRow?: string;
+  collapsedContentContainer?: string;
+  collapsedExpandButton?: string;
+  collapsedContent?: string;
+  collapsedMessage?: string;
   [key: string]: string | undefined;
 }
 
@@ -92,6 +97,11 @@ export interface ReactDiffViewerStylesOverride {
   titleBlock?: Interpolation;
   splitView?: Interpolation;
   allExpandButton?: Interpolation;
+  collapsedRow?: Interpolation;
+  collapsedContentContainer?: Interpolation;
+  collapsedExpandButton?: Interpolation;
+  collapsedContent?: Interpolation;
+  collapsedMessage?: Interpolation;
 }
 
 export default (
@@ -375,6 +385,66 @@ export default (
     },
   });
 
+  const collapsedRow = css({
+    backgroundColor: variables.codeFoldBackground,
+    borderTop: `1px solid ${variables.diffViewerTitleBorderColor}`,
+    height: 60,
+    label: "collapsed-row",
+  });
+
+  const collapsedContentContainer = css({
+    padding: "1em",
+    textAlign: "center",
+    label: "collapsed-content-container",
+  });
+
+  const collapsedExpandButton = css({
+    background: "transparent",
+    border: `1px solid ${variables.diffViewerTitleBorderColor}`,
+    borderRadius: 6,
+    cursor: "pointer",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "0.5em",
+    padding: "0.75em 1.5em",
+    fontSize: 14,
+    fontWeight: 500,
+    color: variables.codeFoldContentColor,
+    fill: variables.codeFoldContentColor,
+    transition: "all 0.2s ease",
+    label: "collapsed-expand-button",
+    ":hover": {
+      background: variables.gutterBackgroundDark,
+      borderColor: variables.addedGutterColor,
+    },
+    ":focus": {
+      outline: `2px solid ${variables.addedGutterColor}`,
+      outlineOffset: 2,
+    },
+    ":active": {
+      transform: "scale(0.98)",
+    },
+  });
+
+  const collapsedContent = css({
+    color: variables.codeFoldContentColor,
+    fontFamily: "monospace",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "0.5em",
+    label: "collapsed-content",
+  });
+
+  const collapsedMessage = css({
+    marginTop: "0.75em",
+    color: variables.codeFoldContentColor,
+    fontFamily: "monospace",
+    fontSize: "0.875em",
+    opacity: 0.8,
+    label: "collapsed-message",
+  });
+
   const emptyLine = css({
     backgroundColor: variables.emptyLineBackground,
     label: "empty-line",
@@ -492,6 +562,11 @@ export default (
     codeFoldContent,
     titleBlock,
     allExpandButton,
+    collapsedRow,
+    collapsedContentContainer,
+    collapsedExpandButton,
+    collapsedContent,
+    collapsedMessage,
   };
 
   const computerOverrideStyles: ReactDiffViewerStyles = Object.keys(

@@ -107,12 +107,31 @@ export interface ReactDiffViewerProps {
   rightTitle?: string | ReactElement;
   // Nonce
   nonce?: string;
+  /**
+   * Sets the initial collapsed state of the diff table.
+   * When true, the diff starts collapsed and user can click to expand.
+   * When false or undefined, the diff starts expanded (default behavior).
+   * Note: This only sets the initial state - the component manages expansion internally.
+   */
+  initiallyCollapsed?: boolean;
+  /**
+   * Custom renderer for the collapsed state placeholder message.
+   * Receives the total number of changes as a parameter.
+   * Default: "Click to expand diff" with expand icon
+   */
+  collapsedMessageRenderer?: (totalChanges: number) => ReactElement;
+  /**
+   * Optional message to display below the expand button in collapsed state.
+   * Useful for contextual information like "This file was deleted" or "Large file collapsed".
+   */
+  collapsedMessage?: string | ReactElement;
 }
 
 export interface ReactDiffViewerState {
   // Array holding the expanded code folding.
   expandedBlocks?: number[];
   noSelect?: "left" | "right";
+  isCollapsed?: boolean;
 }
 
 class DiffViewer extends React.Component<
@@ -144,6 +163,7 @@ class DiffViewer extends React.Component<
     this.state = {
       expandedBlocks: [],
       noSelect: undefined,
+      isCollapsed: props.initiallyCollapsed ?? false,
     };
   }
 
@@ -659,6 +679,56 @@ class DiffViewer extends React.Component<
   };
 
   /**
+   * Renders the collapsed state placeholder with expand button
+   * @param totalChanges Total number of additions + deletions
+   */
+  private renderCollapsedPlaceholder = (totalChanges: number): ReactElement => {
+    const { hideLineNumbers, splitView, collapsedMessage } = this.props;
+
+    const message = this.props.collapsedMessageRenderer ? (
+      this.props.collapsedMessageRenderer(totalChanges)
+    ) : (
+      <span className={this.styles.collapsedContent}>
+       Load diff
+      </span>
+    );
+
+    const handleExpand = (): void => {
+      this.setState({ isCollapsed: false });
+    };
+
+    // Calculate colspan to span entire table width
+    let colspan = splitView ? 4 : 3;
+    if (!hideLineNumbers) {
+      colspan += splitView ? 2 : 2;
+    }
+    if (this.props.renderGutter) {
+      colspan += splitView ? 2 : 1;
+    }
+
+    return (
+      <tr className={this.styles.collapsedRow}>
+        <td colSpan={colspan} className={this.styles.collapsedContentContainer}>
+          <button
+            type="button"
+            className={this.styles.collapsedExpandButton}
+            onClick={handleExpand}
+            tabIndex={0}
+            aria-label="Load diff"
+          >
+            {message}
+          </button>
+          {collapsedMessage && (
+            <div className={this.styles.collapsedMessage}>
+              {collapsedMessage}
+            </div>
+          )}
+        </td>
+      </tr>
+    );
+  };
+
+  /**
    * Generates the entire diff view.
    */
   private renderDiff = (): {
@@ -830,6 +900,7 @@ class DiffViewer extends React.Component<
                   : nodes.blocks.map((b) => b.index),
               });
             }}
+            disabled={this.state.isCollapsed}
           >
             {allExpanded ? <Fold /> : <Expand />}
           </button>{" "}
@@ -837,68 +908,78 @@ class DiffViewer extends React.Component<
           <div style={{ display: "flex", gap: "1px" }}>{blocks}</div>
           {this.props.summary ? <span>{this.props.summary}</span> : null}
         </div>
-        <table
-          className={cn(this.styles.diffContainer, {
-            [this.styles.splitView]: splitView,
-          })}
-          onMouseUp={() => {
-            const elements = document.getElementsByClassName("right");
-            for (let i = 0; i < elements.length; i++) {
-              const element = elements.item(i);
-              element.classList.remove(this.styles.noSelect);
-            }
-            const elementsLeft = document.getElementsByClassName("left");
-            for (let i = 0; i < elementsLeft.length; i++) {
-              const element = elementsLeft.item(i);
-              element.classList.remove(this.styles.noSelect);
-            }
-          }}
-        >
-          <tbody>
-            <tr>
-              {!this.props.hideLineNumbers ? <td width={"50px"} /> : null}
-              {!splitView && !this.props.hideLineNumbers ? (
-                <td width={"50px"} />
-              ) : null}
-              {this.props.renderGutter ? <td width={"50px"} /> : null}
-              <td width={"28px"} />
-              <td width={"100%"} />
-              {splitView ? (
-                <>
-                  {!this.props.hideLineNumbers ? <td width={"50px"} /> : null}
-                  {this.props.renderGutter ? <td width={"50px"} /> : null}
-                  <td width={"28px"} />
-                  <td width={"100%"} />
-                </>
-              ) : null}
-            </tr>
-            {leftTitle || rightTitle ? (
+        {this.state.isCollapsed ? (
+          <table
+            className={cn(this.styles.diffContainer, {
+              [this.styles.splitView]: splitView,
+            })}
+          >
+            <tbody>{this.renderCollapsedPlaceholder(totalChanges)}</tbody>
+          </table>
+        ) : (
+          <table
+            className={cn(this.styles.diffContainer, {
+              [this.styles.splitView]: splitView,
+            })}
+            onMouseUp={() => {
+              const elements = document.getElementsByClassName("right");
+              for (let i = 0; i < elements.length; i++) {
+                const element = elements.item(i);
+                element.classList.remove(this.styles.noSelect);
+              }
+              const elementsLeft = document.getElementsByClassName("left");
+              for (let i = 0; i < elementsLeft.length; i++) {
+                const element = elementsLeft.item(i);
+                element.classList.remove(this.styles.noSelect);
+              }
+            }}
+          >
+            <tbody>
               <tr>
-                <th
-                  colSpan={splitView ? colSpanOnSplitView : colSpanOnInlineView}
-                  className={cn(this.styles.titleBlock, this.styles.column)}
-                >
-                  {leftTitle ? (
-                    <pre className={this.styles.contentText}>{leftTitle}</pre>
-                  ) : null}
-                </th>
+                {!this.props.hideLineNumbers ? <td width={"50px"} /> : null}
+                {!splitView && !this.props.hideLineNumbers ? (
+                  <td width={"50px"} />
+                ) : null}
+                {this.props.renderGutter ? <td width={"50px"} /> : null}
+                <td width={"28px"} />
+                <td width={"100%"} />
                 {splitView ? (
-                  <th
-                    colSpan={colSpanOnSplitView}
-                    className={cn(this.styles.titleBlock, this.styles.column)}
-                  >
-                    {rightTitle ? (
-                      <pre className={this.styles.contentText}>
-                        {rightTitle}
-                      </pre>
-                    ) : null}
-                  </th>
+                  <>
+                    {!this.props.hideLineNumbers ? <td width={"50px"} /> : null}
+                    {this.props.renderGutter ? <td width={"50px"} /> : null}
+                    <td width={"28px"} />
+                    <td width={"100%"} />
+                  </>
                 ) : null}
               </tr>
-            ) : null}
-            {nodes.diffNodes}
-          </tbody>
-        </table>
+              {leftTitle || rightTitle ? (
+                <tr>
+                  <th
+                    colSpan={splitView ? colSpanOnSplitView : colSpanOnInlineView}
+                    className={cn(this.styles.titleBlock, this.styles.column)}
+                  >
+                    {leftTitle ? (
+                      <pre className={this.styles.contentText}>{leftTitle}</pre>
+                    ) : null}
+                  </th>
+                  {splitView ? (
+                    <th
+                      colSpan={colSpanOnSplitView}
+                      className={cn(this.styles.titleBlock, this.styles.column)}
+                    >
+                      {rightTitle ? (
+                        <pre className={this.styles.contentText}>
+                          {rightTitle}
+                        </pre>
+                      ) : null}
+                    </th>
+                  ) : null}
+                </tr>
+              ) : null}
+              {nodes.diffNodes}
+            </tbody>
+          </table>
+        )}
       </div>
     );
   };
