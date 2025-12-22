@@ -26,6 +26,7 @@ interface ExampleState {
   compareMethod?: DiffMethod;
   dataType: string;
   customGutter?: boolean;
+  isCollapsed?: boolean;
 }
 
 const P = (window as any).Prism;
@@ -42,7 +43,8 @@ class Example extends Component<{}, ExampleState> {
       customGutter: true,
       enableSyntaxHighlighting: true,
       dataType: 'javascript',
-      compareMethod: DiffMethod.CHARS
+      compareMethod: DiffMethod.CHARS,
+      isCollapsed: false,
     };
   }
 
@@ -211,6 +213,21 @@ class Example extends Component<{}, ExampleState> {
               <span>Line Numbers</span>
             </div>
             <div>
+              <label className={'switch'}>
+                <input
+                  type="checkbox"
+                  checked={this.state.isCollapsed}
+                  onChange={() => {
+                    this.setState({
+                      isCollapsed: !this.state.isCollapsed,
+                    });
+                  }}
+                />
+                <span className="slider round"></span>
+              </label>
+              <span>Collapse diff</span>
+            </div>
+            <div>
               <label className={'select'}>
                 <select
                   value={this.state.dataType}
@@ -277,6 +294,8 @@ class Example extends Component<{}, ExampleState> {
             summary={this.state.compareMethod === DiffMethod.JSON ? 'package.json' : 'webpack.config.js'}
             leftTitle={this.state.columnHeaders ? `master@2178133 - pushed 2 hours ago.` : undefined}
             rightTitle={this.state.columnHeaders ? `master@64207ee - pushed 13 hours ago.` : undefined}
+            initiallyCollapsed={this.state.isCollapsed}
+            collapsedMessage={this.state.isCollapsed ? "This diff is collapsed to improve performance" : undefined}
           />
         </div>
         <footer>
