@@ -3,8 +3,7 @@
  */
 
 import { render, screen, fireEvent } from "@testing-library/react";
-import * as React from "react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import DiffViewer from "../src/index";
 
@@ -41,7 +40,7 @@ describe("Collapsed State Feature", (): void => {
     expect(rows.length).toBe(1);
 
     // Should show expand button
-    const expandButton = screen.getByRole("button", { name: /expand diff/i });
+    const expandButton = screen.getByRole("button", { name: /load diff/i });
     expect(expandButton).toBeTruthy();
   });
 
@@ -58,7 +57,7 @@ describe("Collapsed State Feature", (): void => {
     let rows = container.querySelectorAll("tbody tr");
     expect(rows.length).toBe(1);
 
-    const expandButton = container.querySelector('button[aria-label="Expand diff"]');
+    const expandButton = container.querySelector('button[aria-label="Load diff"]');
     fireEvent.click(expandButton!);
 
     // Should now show full diff with multiple rows
@@ -125,7 +124,7 @@ describe("Collapsed State Feature", (): void => {
       />,
     );
 
-    let expandButton = container.querySelector('button[aria-label="Expand diff"]');
+    let expandButton = container.querySelector('button[aria-label="Load diff"]');
     expect(expandButton).toBeTruthy();
 
     rerender(
@@ -137,7 +136,7 @@ describe("Collapsed State Feature", (): void => {
       />,
     );
 
-    expandButton = container.querySelector('button[aria-label="Expand diff"]');
+    expandButton = container.querySelector('button[aria-label="Load diff"]');
     expect(expandButton).toBeTruthy();
   });
 
@@ -150,7 +149,7 @@ describe("Collapsed State Feature", (): void => {
       />,
     );
 
-    const expandButton = container.querySelector('button[aria-label="Expand diff"]') as HTMLButtonElement;
+    const expandButton = container.querySelector('button[aria-label="Load diff"]') as HTMLButtonElement;
 
     // Focus the button
     expandButton.focus();
@@ -176,7 +175,7 @@ describe("Collapsed State Feature", (): void => {
     const rows = container.querySelectorAll("tbody tr");
     expect(rows.length).toBe(1);
 
-    const expandButton = container.querySelector('button[aria-label="Expand diff"]');
+    const expandButton = container.querySelector('button[aria-label="Load diff"]');
     expect(expandButton).toBeTruthy();
   });
 
@@ -194,7 +193,7 @@ describe("Collapsed State Feature", (): void => {
     const rows = container.querySelectorAll("tbody tr");
     expect(rows.length).toBe(1);
 
-    const expandButton = container.querySelector('button[aria-label="Expand diff"]');
+    const expandButton = container.querySelector('button[aria-label="Load diff"]');
     expect(expandButton).toBeTruthy();
   });
 
