@@ -112,6 +112,18 @@ function unwrapElements(nodes: HTMLNode[]): HTMLNode[] {
 }
 
 /**
+ * HTML-escape text content to preserve special characters
+ */
+function escapeHTML(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;");
+}
+
+/**
  * Split HTML nodes by newline characters, creating separate lines
  * Each line maintains the proper tag context from parent elements
  */
@@ -149,7 +161,8 @@ function splitNodesByNewlines(
               currentLine += attrs ? `<${ctx.tagName} ${attrs}>` : `<${ctx.tagName}>`;
             }
           }
-          currentLine += parts[i];
+          // HTML-escape text content to preserve special characters like <, >, &
+          currentLine += escapeHTML(parts[i]);
         }
       } else if (node.type === "element") {
         // Open the element tag
