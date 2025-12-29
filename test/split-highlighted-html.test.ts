@@ -196,10 +196,10 @@ describe("split-highlighted-html utilities", () => {
       const lines = splitContinuousHTML(html);
 
       expect(lines).toHaveLength(2);
-      // DOMParser converts HTML entities back to actual characters
-      // This is expected behavior and matches what browsers do
-      expect(lines[0]).toContain("<div>");
-      expect(lines[1]).toContain("&");
+      // HTML entities should be preserved in the output
+      // This ensures that syntax-highlighted code like <div> doesn't get interpreted as HTML
+      expect(lines[0]).toContain("&lt;div&gt;");
+      expect(lines[1]).toContain("&amp;");
     });
 
     it("should handle deeply nested structures", () => {
