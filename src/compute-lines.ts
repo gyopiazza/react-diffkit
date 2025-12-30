@@ -1,5 +1,5 @@
-import * as diff from "diff";
-import { processRenderedLines } from "./split-highlighted-html.js";
+import * as diff from 'diff';
+import { processRenderedLines } from './split-highlighted-html.js';
 
 const jsDiff: { [key: string]: any } = diff;
 
@@ -12,14 +12,14 @@ export enum DiffType {
 
 // See https://github.com/kpdecker/jsdiff/tree/v4.0.1#api for more info on the below JsDiff methods
 export enum DiffMethod {
-  CHARS = "diffChars",
-  WORDS = "diffWords",
-  WORDS_WITH_SPACE = "diffWordsWithSpace",
-  LINES = "diffLines",
-  TRIMMED_LINES = "diffTrimmedLines",
-  SENTENCES = "diffSentences",
-  CSS = "diffCss",
-  JSON = "diffJson",
+  CHARS = 'diffChars',
+  WORDS = 'diffWords',
+  WORDS_WITH_SPACE = 'diffWordsWithSpace',
+  LINES = 'diffLines',
+  TRIMMED_LINES = 'diffTrimmedLines',
+  SENTENCES = 'diffSentences',
+  CSS = 'diffCss',
+  JSON = 'diffJson',
 }
 
 export interface DiffInformation {
@@ -60,9 +60,9 @@ export interface JsDiffChangeObject {
  * @param value Diff text from the js diff module.
  */
 const constructLines = (value: string): string[] => {
-  if (value === "") return [];
+  if (value === '') return [];
 
-  const lines = value.replace(/\n$/, "").split("\n");
+  const lines = value.replace(/\n$/, '').split('\n');
 
   return lines;
 };
@@ -83,7 +83,7 @@ const computeDiff = (
     | ((oldStr: string, newStr: string) => diff.Change[]) = DiffMethod.CHARS,
 ): ComputedDiffInformation => {
   const compareFunc =
-    typeof compareMethod === "string" ? jsDiff[compareMethod] : compareMethod;
+    typeof compareMethod === 'string' ? jsDiff[compareMethod] : compareMethod;
   const diffArray: JsDiffChangeObject[] = compareFunc(oldValue, newValue);
   const computedDiff: ComputedDiffInformation = {
     left: [],
@@ -146,7 +146,7 @@ const computeLineInformation = (
   let diffArray: diff.Change[] = [];
 
   // Use diffLines for strings, and diffJson for objects...
-  if (typeof oldString === "string" && typeof newString === "string") {
+  if (typeof oldString === 'string' && typeof newString === 'string') {
     diffArray = diff.diffLines(oldString, newString, {
       newlineIsToken: false,
       ignoreWhitespace,
@@ -191,7 +191,7 @@ const computeLineInformation = (
             leftLineNumber += 1;
             left.lineNumber = leftLineNumber;
             left.type = DiffType.REMOVED;
-            left.value = line || " ";
+            left.value = line || ' ';
             // Attach pre-rendered HTML if available (1-indexed to 0-indexed)
             if (oldHTMLLines.length > 0 && leftLineNumber > 0) {
               left.renderedHTML = oldHTMLLines[leftLineNumber - 1];

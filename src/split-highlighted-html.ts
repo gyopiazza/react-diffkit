@@ -6,7 +6,7 @@
  */
 
 interface HTMLNode {
-  type: "element" | "text";
+  type: 'element' | 'text';
   tagName?: string;
   attributes?: Record<string, string>;
   children?: HTMLNode[];
@@ -18,8 +18,8 @@ interface HTMLNode {
  */
 function parseHTMLToTree(html: string): HTMLNode[] {
   const parser = new DOMParser();
-  const doc = parser.parseFromString(`<root>${html}</root>`, "text/html");
-  const rootElement = doc.querySelector("root");
+  const doc = parser.parseFromString(`<root>${html}</root>`, 'text/html');
+  const rootElement = doc.querySelector('root');
 
   if (!rootElement) {
     return [];
@@ -27,9 +27,9 @@ function parseHTMLToTree(html: string): HTMLNode[] {
 
   function traverseNode(node: Node): HTMLNode | null {
     if (node.nodeType === Node.TEXT_NODE) {
-      const text = node.textContent || "";
+      const text = node.textContent || '';
       return {
-        type: "text",
+        type: 'text',
         text,
       };
     }
@@ -52,7 +52,7 @@ function parseHTMLToTree(html: string): HTMLNode[] {
       }
 
       return {
-        type: "element",
+        type: 'element',
         tagName: element.tagName.toLowerCase(),
         attributes,
         children,
@@ -78,12 +78,12 @@ function parseHTMLToTree(html: string): HTMLNode[] {
  * (e.g., <code>, <pre> tags that highlight.js adds)
  */
 function isWrapperElement(node: HTMLNode): boolean {
-  if (node.type !== "element") {
+  if (node.type !== 'element') {
     return false;
   }
 
-  const wrapperTags = ["code", "pre"];
-  return wrapperTags.includes(node.tagName || "");
+  const wrapperTags = ['code', 'pre'];
+  return wrapperTags.includes(node.tagName || '');
 }
 
 /**
@@ -97,7 +97,7 @@ function unwrapElements(nodes: HTMLNode[]): HTMLNode[] {
       // Recursively unwrap children
       const unwrappedChildren = unwrapElements(node.children || []);
       result.push(...unwrappedChildren);
-    } else if (node.type === "element" && node.children) {
+    } else if (node.type === 'element' && node.children) {
       // Recursively process children of non-wrapper elements
       result.push({
         ...node,
@@ -116,11 +116,11 @@ function unwrapElements(nodes: HTMLNode[]): HTMLNode[] {
  */
 function escapeHTML(text: string): string {
   return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#x27;");
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
 }
 
 /**
@@ -129,21 +129,21 @@ function escapeHTML(text: string): string {
  */
 function splitNodesByNewlines(
   nodes: HTMLNode[],
-  tagContext: HTMLNode[] = []
+  tagContext: HTMLNode[] = [],
 ): string[] {
   const lines: string[] = [];
-  let currentLine: string = "";
+  let currentLine: string = '';
 
   function flushLine() {
     lines.push(currentLine);
-    currentLine = "";
+    currentLine = '';
   }
 
   function processNodes(nodeList: HTMLNode[], context: HTMLNode[]): void {
     for (const node of nodeList) {
-      if (node.type === "text") {
-        const text = node.text || "";
-        const parts = text.split("\n");
+      if (node.type === 'text') {
+        const text = node.text || '';
+        const parts = text.split('\n');
 
         for (let i = 0; i < parts.length; i++) {
           if (i > 0) {
@@ -156,20 +156,26 @@ function splitNodesByNewlines(
             for (let j = 0; j < context.length; j++) {
               const ctx = context[j];
               const attrs = Object.entries(ctx.attributes || {})
-                .map(([key, value]) => `${key}="${value.replace(/"/g, "&quot;")}"`)
-                .join(" ");
-              currentLine += attrs ? `<${ctx.tagName} ${attrs}>` : `<${ctx.tagName}>`;
+                .map(
+                  ([key, value]) => `${key}="${value.replace(/"/g, '&quot;')}"`,
+                )
+                .join(' ');
+              currentLine += attrs
+                ? `<${ctx.tagName} ${attrs}>`
+                : `<${ctx.tagName}>`;
             }
           }
           // HTML-escape text content to preserve special characters like <, >, &
           currentLine += escapeHTML(parts[i]);
         }
-      } else if (node.type === "element") {
+      } else if (node.type === 'element') {
         // Open the element tag
         const attrs = Object.entries(node.attributes || {})
-          .map(([key, value]) => `${key}="${value.replace(/"/g, "&quot;")}"`)
-          .join(" ");
-        currentLine += attrs ? `<${node.tagName} ${attrs}>` : `<${node.tagName}>`;
+          .map(([key, value]) => `${key}="${value.replace(/"/g, '&quot;')}"`)
+          .join(' ');
+        currentLine += attrs
+          ? `<${node.tagName} ${attrs}>`
+          : `<${node.tagName}>`;
 
         // Process children with this element in context
         const newContext = [...context, node];
@@ -196,7 +202,7 @@ function splitNodesByNewlines(
  * Heuristic: check for common wrapper elements or if splitting by \n yields invalid HTML
  */
 export function isContinuousHTML(html: string): boolean {
-  if (!html || typeof html !== "string") {
+  if (!html || typeof html !== 'string') {
     return false;
   }
 
@@ -207,7 +213,7 @@ export function isContinuousHTML(html: string): boolean {
   }
 
   // Check if any line after split has unclosed tags
-  const lines = html.split("\n");
+  const lines = html.split('\n');
   if (lines.length <= 1) {
     return false;
   }
@@ -283,5 +289,5 @@ export function processRenderedLines(renderedLines?: string): string[] {
   }
 
   // Already line-separated format (backward compatible)
-  return renderedLines.split("\n");
+  return renderedLines.split('\n');
 }

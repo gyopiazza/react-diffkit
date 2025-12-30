@@ -1,11 +1,11 @@
-import * as React from "react";
-import type { ReactElement } from "react";
+import type { ReactElement } from 'react';
+import * as React from 'react';
 
 /**
  * Represents a node in the HTML tree
  */
 interface HTMLNode {
-  type: "element" | "text";
+  type: 'element' | 'text';
   // For element nodes
   tagName?: string;
   attributes?: Record<string, string>;
@@ -25,28 +25,28 @@ export function parseHTML(html: string): {
   plainText: string;
 } {
   const tree: HTMLNode[] = [];
-  let plainText = "";
+  let plainText = '';
   let charPosition = 0;
 
   // Simple HTML parser using regex
   const parser = new DOMParser();
-  const doc = parser.parseFromString(`<root>${html}</root>`, "text/html");
-  const rootElement = doc.querySelector("root");
+  const doc = parser.parseFromString(`<root>${html}</root>`, 'text/html');
+  const rootElement = doc.querySelector('root');
 
   if (!rootElement) {
-    return { tree: [], plainText: "" };
+    return { tree: [], plainText: '' };
   }
 
   function traverseNode(node: Node): HTMLNode | null {
     if (node.nodeType === Node.TEXT_NODE) {
-      const text = node.textContent || "";
+      const text = node.textContent || '';
       const startPos = charPosition;
       charPosition += text.length;
       const endPos = charPosition;
       plainText += text;
 
       return {
-        type: "text",
+        type: 'text',
         text,
         startPos,
         endPos,
@@ -71,7 +71,7 @@ export function parseHTML(html: string): {
       }
 
       return {
-        type: "element",
+        type: 'element',
         tagName: element.tagName.toLowerCase(),
         attributes,
         children,
@@ -97,7 +97,7 @@ export function parseHTML(html: string): {
 export interface ChangeRange {
   start: number;
   end: number;
-  type: "added" | "removed" | "default";
+  type: 'added' | 'removed' | 'default';
 }
 
 /**
@@ -122,7 +122,7 @@ export function injectDiffTags(
   }
 
   function splitTextNode(node: HTMLNode, splitPositions: number[]): HTMLNode[] {
-    if (node.type !== "text" || !node.text) {
+    if (node.type !== 'text' || !node.text) {
       return [node];
     }
 
@@ -145,7 +145,7 @@ export function injectDiffTags(
 
       if (textSegment.length > 0) {
         result.push({
-          type: "text",
+          type: 'text',
           text: textSegment,
           startPos: currentPos,
           endPos: splitPos,
@@ -160,7 +160,7 @@ export function injectDiffTags(
     const textSegment = node.text.substring(textStart);
     if (textSegment.length > 0) {
       result.push({
-        type: "text",
+        type: 'text',
         text: textSegment,
         startPos: currentPos,
         endPos,
@@ -172,34 +172,34 @@ export function injectDiffTags(
 
   function wrapWithDiffTag(nodes: HTMLNode[], changeType: string): HTMLNode {
     const tagName =
-      changeType === "added"
-        ? "ins"
-        : changeType === "removed"
-          ? "del"
-          : "span";
+      changeType === 'added'
+        ? 'ins'
+        : changeType === 'removed'
+        ? 'del'
+        : 'span';
     const classNames: string[] = [];
 
     // Add CSS classes if provided
     if (cssClasses?.wordDiff) {
       classNames.push(cssClasses.wordDiff);
     }
-    if (changeType === "added" && cssClasses?.wordAdded) {
+    if (changeType === 'added' && cssClasses?.wordAdded) {
       classNames.push(cssClasses.wordAdded);
     }
-    if (changeType === "removed" && cssClasses?.wordRemoved) {
+    if (changeType === 'removed' && cssClasses?.wordRemoved) {
       classNames.push(cssClasses.wordRemoved);
     }
 
     return {
-      type: "element",
+      type: 'element',
       tagName,
-      attributes: classNames.length > 0 ? { class: classNames.join(" ") } : {},
+      attributes: classNames.length > 0 ? { class: classNames.join(' ') } : {},
       children: nodes,
     };
   }
 
   function processNode(node: HTMLNode): HTMLNode[] {
-    if (node.type === "text") {
+    if (node.type === 'text') {
       const { startPos = 0, endPos = 0 } = node;
 
       // Find all changes that overlap with this text node
@@ -236,7 +236,7 @@ export function injectDiffTags(
           (c) => c.start <= nodeStart && c.end >= nodeEnd,
         );
 
-        if (change && change.type !== "default") {
+        if (change && change.type !== 'default') {
           result.push(wrapWithDiffTag([splitNode], change.type));
         } else {
           result.push(splitNode);
@@ -246,7 +246,7 @@ export function injectDiffTags(
       return result;
     }
 
-    if (node.type === "element") {
+    if (node.type === 'element') {
       // Process children recursively
       const newChildren: HTMLNode[] = [];
       for (const child of node.children || []) {
@@ -279,15 +279,15 @@ export function injectDiffTags(
 function parseCSSStringToObject(cssString: string): Record<string, string> {
   const styleObject: Record<string, string> = {};
 
-  if (!cssString || typeof cssString !== "string") {
+  if (!cssString || typeof cssString !== 'string') {
     return styleObject;
   }
 
   // Split by semicolon and process each property
-  const declarations = cssString.split(";").filter((d) => d.trim());
+  const declarations = cssString.split(';').filter((d) => d.trim());
 
   for (const declaration of declarations) {
-    const colonIndex = declaration.indexOf(":");
+    const colonIndex = declaration.indexOf(':');
     if (colonIndex === -1) continue;
 
     const property = declaration.substring(0, colonIndex).trim();
@@ -317,19 +317,19 @@ function nodeToReactElement(
   node: HTMLNode,
   key: number | string,
 ): ReactElement {
-  if (node.type === "text") {
+  if (node.type === 'text') {
     return React.createElement(React.Fragment, { key }, node.text);
   }
 
-  if (node.type === "element") {
-    const { tagName = "span", attributes = {}, children = [] } = node;
+  if (node.type === 'element') {
+    const { tagName = 'span', attributes = {}, children = [] } = node;
     const props: any = { key };
 
     // Copy attributes to props
     for (const [attrName, attrValue] of Object.entries(attributes)) {
-      if (attrName === "class") {
+      if (attrName === 'class') {
         props.className = attrValue;
-      } else if (attrName === "style") {
+      } else if (attrName === 'style') {
         // Parse inline CSS string to React style object
         props.style = parseCSSStringToObject(attrValue);
       } else {

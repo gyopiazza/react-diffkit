@@ -1,5 +1,5 @@
-import createEmotion from "@emotion/css/create-instance";
-import type { Interpolation } from "@emotion/react";
+import createEmotion from '@emotion/css/create-instance';
+import type { Interpolation } from '@emotion/react';
 
 export interface ReactDiffViewerStyles {
   diffContainer?: string;
@@ -107,68 +107,68 @@ export interface ReactDiffViewerStylesOverride {
 export default (
   styleOverride: ReactDiffViewerStylesOverride,
   useDarkTheme = false,
-  nonce = "",
+  nonce = '',
 ): ReactDiffViewerStyles => {
   const { variables: overrideVariables = {}, ...styles } = styleOverride;
 
   const themeVariables = {
     light: {
       ...{
-        diffViewerBackground: "#fff",
-        diffViewerColor: "#212529",
-        addedBackground: "#e6ffed",
-        addedColor: "#24292e",
-        removedBackground: "#ffeef0",
-        removedColor: "#24292e",
-        changedBackground: "#fffbdd",
-        wordAddedBackground: "#acf2bd",
-        wordRemovedBackground: "#fdb8c0",
-        addedGutterBackground: "#cdffd8",
-        removedGutterBackground: "#ffdce0",
-        gutterBackground: "#f7f7f7",
-        gutterBackgroundDark: "#f3f1f1",
-        highlightBackground: "#fffbdd",
-        highlightGutterBackground: "#fff5b1",
-        codeFoldGutterBackground: "#dbedff",
-        codeFoldBackground: "#f1f8ff",
-        emptyLineBackground: "#fafbfc",
-        gutterColor: "#212529",
-        addedGutterColor: "#212529",
-        removedGutterColor: "#212529",
-        codeFoldContentColor: "#212529",
-        diffViewerTitleBackground: "#fafbfc",
-        diffViewerTitleColor: "#212529",
-        diffViewerTitleBorderColor: "#eee",
+        diffViewerBackground: '#fff',
+        diffViewerColor: '#212529',
+        addedBackground: '#e6ffed',
+        addedColor: '#24292e',
+        removedBackground: '#ffeef0',
+        removedColor: '#24292e',
+        changedBackground: '#fffbdd',
+        wordAddedBackground: '#acf2bd',
+        wordRemovedBackground: '#fdb8c0',
+        addedGutterBackground: '#cdffd8',
+        removedGutterBackground: '#ffdce0',
+        gutterBackground: '#f7f7f7',
+        gutterBackgroundDark: '#f3f1f1',
+        highlightBackground: '#fffbdd',
+        highlightGutterBackground: '#fff5b1',
+        codeFoldGutterBackground: '#dbedff',
+        codeFoldBackground: '#f1f8ff',
+        emptyLineBackground: '#fafbfc',
+        gutterColor: '#212529',
+        addedGutterColor: '#212529',
+        removedGutterColor: '#212529',
+        codeFoldContentColor: '#212529',
+        diffViewerTitleBackground: '#fafbfc',
+        diffViewerTitleColor: '#212529',
+        diffViewerTitleBorderColor: '#eee',
       },
       ...(overrideVariables.light || {}),
     },
     dark: {
       ...{
-        diffViewerBackground: "#2e303c",
-        diffViewerColor: "#FFF",
-        addedBackground: "#044B53",
-        addedColor: "white",
-        removedBackground: "#632F34",
-        removedColor: "white",
-        changedBackground: "#3e302c",
-        wordAddedBackground: "#055d67",
-        wordRemovedBackground: "#7d383f",
-        addedGutterBackground: "#034148",
-        removedGutterBackground: "#632b30",
-        gutterBackground: "#2c2f3a",
-        gutterBackgroundDark: "#262933",
-        highlightBackground: "#2a3967",
-        highlightGutterBackground: "#2d4077",
-        codeFoldGutterBackground: "#262831",
-        codeFoldBackground: "#262831",
-        emptyLineBackground: "#2e303c",
-        gutterColor: "#666c87",
-        addedGutterColor: "#8c8c8c",
-        removedGutterColor: "#8c8c8c",
-        codeFoldContentColor: "#656a8b",
-        diffViewerTitleBackground: "#2f323e",
-        diffViewerTitleColor: "#757a9b",
-        diffViewerTitleBorderColor: "#353846",
+        diffViewerBackground: '#2e303c',
+        diffViewerColor: '#FFF',
+        addedBackground: '#044B53',
+        addedColor: 'white',
+        removedBackground: '#632F34',
+        removedColor: 'white',
+        changedBackground: '#3e302c',
+        wordAddedBackground: '#055d67',
+        wordRemovedBackground: '#7d383f',
+        addedGutterBackground: '#034148',
+        removedGutterBackground: '#632b30',
+        gutterBackground: '#2c2f3a',
+        gutterBackgroundDark: '#262933',
+        highlightBackground: '#2a3967',
+        highlightGutterBackground: '#2d4077',
+        codeFoldGutterBackground: '#262831',
+        codeFoldBackground: '#262831',
+        emptyLineBackground: '#2e303c',
+        gutterColor: '#666c87',
+        addedGutterColor: '#8c8c8c',
+        removedGutterColor: '#8c8c8c',
+        codeFoldContentColor: '#656a8b',
+        diffViewerTitleBackground: '#2f323e',
+        diffViewerTitleColor: '#757a9b',
+        diffViewerTitleBorderColor: '#353846',
       },
       ...(overrideVariables.dark || {}),
     },
@@ -176,90 +176,90 @@ export default (
 
   const variables = useDarkTheme ? themeVariables.dark : themeVariables.light;
 
-  const { css, cx } = createEmotion({ key: "react-diff", nonce });
+  const { css, cx } = createEmotion({ key: 'react-diff', nonce });
 
   const content = css({
-    width: "auto",
-    label: "content",
+    width: 'auto',
+    label: 'content',
   });
 
   const splitView = css({
-    label: "split-view",
+    label: 'split-view',
   });
 
   const summary = css({
     background: variables.diffViewerTitleBackground,
     color: variables.diffViewerTitleColor,
-    padding: "0.5em 1em",
-    display: "flex",
-    alignItems: "center",
-    gap: "0.5em",
-    fontFamily: "monospace",
+    padding: '0.5em 1em',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5em',
+    fontFamily: 'monospace',
     fill: variables.diffViewerTitleColor,
   });
 
   const diffContainer = css({
-    width: "100%",
-    minWidth: "1000px",
-    overflowX: "auto",
-    tableLayout: "fixed",
+    width: '100%',
+    minWidth: '1000px',
+    overflowX: 'auto',
+    tableLayout: 'fixed',
     background: variables.diffViewerBackground,
     pre: {
       margin: 0,
-      whiteSpace: "pre-wrap",
-      lineHeight: "1.6em",
-      width: "fit-content",
+      whiteSpace: 'pre-wrap',
+      lineHeight: '1.6em',
+      width: 'fit-content',
     },
-    label: "diff-container",
-    borderCollapse: "collapse",
+    label: 'diff-container',
+    borderCollapse: 'collapse',
   });
 
   const lineContent = css({
-    overflow: "hidden",
-    width: "100%",
+    overflow: 'hidden',
+    width: '100%',
   });
 
   const contentText = css({
     color: variables.diffViewerColor,
-    whiteSpace: "pre-wrap",
-    fontFamily: "monospace",
-    lineBreak: "anywhere",
-    textDecoration: "none",
-    label: "content-text",
+    whiteSpace: 'pre-wrap',
+    fontFamily: 'monospace',
+    lineBreak: 'anywhere',
+    textDecoration: 'none',
+    label: 'content-text',
   });
 
   const unselectable = css({
-    userSelect: "none",
-    label: "unselectable",
+    userSelect: 'none',
+    label: 'unselectable',
   });
 
   const allExpandButton = css({
-    background: "transparent",
-    border: "none",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
     margin: 0,
-    label: "all-expand-button",
-    ":hover": {
+    label: 'all-expand-button',
+    ':hover': {
       fill: variables.addedGutterColor,
     },
-    ":focus": {
+    ':focus': {
       outline: `1px ${variables.addedGutterColor} solid`,
     },
   });
 
   const titleBlock = css({
     background: variables.diffViewerTitleBackground,
-    padding: "0.5em",
-    lineHeight: "1.4em",
-    height: "2.4em",
-    overflow: "hidden",
-    width: "50%",
+    padding: '0.5em',
+    lineHeight: '1.4em',
+    height: '2.4em',
+    overflow: 'hidden',
+    width: '50%',
     borderBottom: `1px solid ${variables.diffViewerTitleBorderColor}`,
-    label: "title-block",
-    ":last-child": {
+    label: 'title-block',
+    ':last-child': {
       borderLeft: `1px solid ${variables.diffViewerTitleBorderColor}`,
     },
     [`.${contentText}`]: {
@@ -269,7 +269,7 @@ export default (
 
   const lineNumber = css({
     color: variables.gutterColor,
-    label: "line-number",
+    label: 'line-number',
   });
 
   const diffRemoved = css({
@@ -281,7 +281,7 @@ export default (
     [`.${lineNumber}`]: {
       color: variables.removedGutterColor,
     },
-    label: "diff-removed",
+    label: 'diff-removed',
   });
 
   const diffAdded = css({
@@ -293,7 +293,7 @@ export default (
     [`.${lineNumber}`]: {
       color: variables.addedGutterColor,
     },
-    label: "diff-added",
+    label: 'diff-added',
   });
 
   const diffChanged = css({
@@ -301,62 +301,62 @@ export default (
     [`.${lineNumber}`]: {
       color: variables.gutterColor,
     },
-    label: "diff-changed",
+    label: 'diff-changed',
   });
 
   const wordDiff = css({
     padding: 2,
-    display: "inline",
+    display: 'inline',
     borderRadius: 4,
-    wordBreak: "break-all",
-    label: "word-diff",
+    wordBreak: 'break-all',
+    label: 'word-diff',
   });
 
   const wordAdded = css({
     background: variables.wordAddedBackground,
-    textDecoration: "none",
-    label: "word-added",
+    textDecoration: 'none',
+    label: 'word-added',
   });
 
   const wordRemoved = css({
     background: variables.wordRemovedBackground,
-    textDecoration: "none",
-    label: "word-removed",
+    textDecoration: 'none',
+    label: 'word-removed',
   });
 
   const codeFoldGutter = css({
     backgroundColor: variables.codeFoldGutterBackground,
-    label: "code-fold-gutter",
-    minWidth: "50px",
-    width: "50px",
+    label: 'code-fold-gutter',
+    minWidth: '50px',
+    width: '50px',
   });
 
   const codeFoldContentContainer = css({
-    padding: "",
+    padding: '',
   });
 
   const codeFoldExpandButton = css({
     background: variables.codeFoldBackground,
-    cursor: "pointer",
-    display: "inline",
+    cursor: 'pointer',
+    display: 'inline',
     margin: 0,
-    border: "none",
-    label: "code-fold-expand-button",
+    border: 'none',
+    label: 'code-fold-expand-button',
   });
 
   const codeFoldContent = css({
     color: variables.codeFoldContentColor,
-    fontFamily: "monospace",
-    label: "code-fold-content",
+    fontFamily: 'monospace',
+    label: 'code-fold-content',
   });
 
   const block = css({
-    display: "block",
-    width: "10px",
-    height: "10px",
-    backgroundColor: "#ddd",
-    borderWidth: "1px",
-    borderStyle: "solid",
+    display: 'block',
+    width: '10px',
+    height: '10px',
+    backgroundColor: '#ddd',
+    borderWidth: '1px',
+    borderStyle: 'solid',
     borderColor: variables.diffViewerTitleBorderColor,
   });
 
@@ -372,15 +372,15 @@ export default (
     backgroundColor: variables.codeFoldBackground,
     height: 40,
     fontSize: 14,
-    alignItems: "center",
-    userSelect: "none",
+    alignItems: 'center',
+    userSelect: 'none',
     fontWeight: 700,
-    label: "code-fold",
+    label: 'code-fold',
     a: {
-      textDecoration: "underline !important",
-      cursor: "pointer",
+      textDecoration: 'underline !important',
+      cursor: 'pointer',
       pre: {
-        display: "inline",
+        display: 'inline',
       },
     },
   });
@@ -389,73 +389,73 @@ export default (
     backgroundColor: variables.codeFoldBackground,
     borderTop: `1px solid ${variables.diffViewerTitleBorderColor}`,
     height: 60,
-    label: "collapsed-row",
+    label: 'collapsed-row',
   });
 
   const collapsedContentContainer = css({
-    padding: "1em",
-    textAlign: "center",
-    label: "collapsed-content-container",
+    padding: '1em',
+    textAlign: 'center',
+    label: 'collapsed-content-container',
   });
 
   const collapsedExpandButton = css({
-    background: "transparent",
+    background: 'transparent',
     border: `1px solid ${variables.diffViewerTitleBorderColor}`,
     borderRadius: 6,
-    cursor: "pointer",
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "0.5em",
-    padding: "0.75em 1.5em",
+    cursor: 'pointer',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '0.5em',
+    padding: '0.75em 1.5em',
     fontSize: 14,
     fontWeight: 500,
     color: variables.codeFoldContentColor,
     fill: variables.codeFoldContentColor,
-    transition: "all 0.2s ease",
-    label: "collapsed-expand-button",
-    ":hover": {
+    transition: 'all 0.2s ease',
+    label: 'collapsed-expand-button',
+    ':hover': {
       background: variables.gutterBackgroundDark,
       borderColor: variables.addedGutterColor,
     },
-    ":focus": {
+    ':focus': {
       outline: `2px solid ${variables.addedGutterColor}`,
       outlineOffset: 2,
     },
-    ":active": {
-      transform: "scale(0.98)",
+    ':active': {
+      transform: 'scale(0.98)',
     },
   });
 
   const collapsedContent = css({
     color: variables.codeFoldContentColor,
-    fontFamily: "monospace",
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "0.5em",
-    label: "collapsed-content",
+    fontFamily: 'monospace',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '0.5em',
+    label: 'collapsed-content',
   });
 
   const collapsedMessage = css({
-    marginTop: "0.75em",
+    marginTop: '0.75em',
     color: variables.codeFoldContentColor,
-    fontFamily: "monospace",
-    fontSize: "0.875em",
+    fontFamily: 'monospace',
+    fontSize: '0.875em',
     opacity: 0.8,
-    label: "collapsed-message",
+    label: 'collapsed-message',
   });
 
   const emptyLine = css({
     backgroundColor: variables.emptyLineBackground,
-    label: "empty-line",
+    label: 'empty-line',
   });
 
   const marker = css({
     width: 28,
     paddingLeft: 10,
     paddingRight: 10,
-    userSelect: "none",
-    label: "marker",
+    userSelect: 'none',
+    label: 'marker',
     [`&.${diffAdded}`]: {
       pre: {
         color: variables.addedColor,
@@ -470,27 +470,27 @@ export default (
 
   const highlightedLine = css({
     background: variables.highlightBackground,
-    label: "highlighted-line",
+    label: 'highlighted-line',
     [`.${wordAdded}, .${wordRemoved}`]: {
-      backgroundColor: "initial",
+      backgroundColor: 'initial',
     },
   });
 
   const highlightedGutter = css({
-    label: "highlighted-gutter",
+    label: 'highlighted-gutter',
   });
 
   const gutter = css({
-    userSelect: "none",
+    userSelect: 'none',
     minWidth: 50,
-    width: "50px",
-    padding: "0 10px",
-    whiteSpace: "nowrap",
-    label: "gutter",
-    textAlign: "right",
+    width: '50px',
+    padding: '0 10px',
+    whiteSpace: 'nowrap',
+    label: 'gutter',
+    textAlign: 'right',
     background: variables.gutterBackground,
-    "&:hover": {
-      cursor: "pointer",
+    '&:hover': {
+      cursor: 'pointer',
       background: variables.gutterBackgroundDark,
       pre: {
         opacity: 1,
@@ -507,24 +507,24 @@ export default (
     },
     [`&.${highlightedGutter}`]: {
       background: variables.highlightGutterBackground,
-      "&:hover": {
+      '&:hover': {
         background: variables.highlightGutterBackground,
       },
     },
   });
 
   const emptyGutter = css({
-    "&:hover": {
+    '&:hover': {
       background: variables.gutterBackground,
-      cursor: "initial",
+      cursor: 'initial',
     },
-    label: "empty-gutter",
+    label: 'empty-gutter',
   });
 
   const line = css({
-    verticalAlign: "baseline",
-    label: "line",
-    textDecoration: "none",
+    verticalAlign: 'baseline',
+    label: 'line',
+    textDecoration: 'none',
   });
 
   const column = css({});
