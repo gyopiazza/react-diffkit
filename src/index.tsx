@@ -32,6 +32,24 @@ export enum LineNumberPrefix {
   RIGHT = 'R',
 }
 
+/**
+ * Represents a word-level highlight to apply on a specific line.
+ * Used to force word-level highlighting even on pure additions/deletions
+ * where the diff algorithm doesn't automatically compute word diffs.
+ */
+export interface WordHighlight {
+  /** Which side of the diff ('left' for old, 'right' for new) */
+  side: 'left' | 'right';
+  /** 1-based line number */
+  lineNumber: number;
+  /** 0-based start column in the line text */
+  startColumn: number;
+  /** 0-based end column in the line text (exclusive) */
+  endColumn: number;
+  /** Type of highlight to apply */
+  type: 'added' | 'removed';
+}
+
 export interface ReactDiffViewerProps {
   // Old value to compare.
   oldValue: string | Record<string, unknown>;
@@ -124,6 +142,13 @@ export interface ReactDiffViewerProps {
    * Useful for contextual information like "This file was deleted" or "Large file collapsed".
    */
   collapsedMessage?: string | ReactElement;
+  /**
+   * Additional word-level highlights to apply.
+   * These are applied even on pure additions/deletions where
+   * automatic word diffing doesn't occur.
+   * Useful for highlighting renamed symbols or other semantic changes.
+   */
+  wordHighlights?: WordHighlight[];
 }
 
 export interface ReactDiffViewerState {
@@ -339,22 +364,61 @@ class DiffViewer extends React.Component<
     let content;
     const hasWordDiff = Array.isArray(value);
 
+    // Check for forced word highlights on this line
+    // For inline view, pure additions have lineNumber=null and actual line in additionalLineNumber
+    const side = prefix === LineNumberPrefix.LEFT ? 'left' : 'right';
+    const effectiveLineNumber = lineNumber ?? additionalLineNumber;
+    const lineWordHighlights = this.props.wordHighlights?.filter(
+      (h) => h.side === side && h.lineNumber === effectiveLineNumber,
+    );
+    const hasWordHighlights = lineWordHighlights && lineWordHighlights.length > 0;
+
     // Priority: renderedHTML > plain value
     if (hasWordDiff) {
       // For word diffs, pass the rendered HTML to merge with diff tags
       content = this.renderWordDiff(value, renderedHTML);
+    } else if (renderedHTML && hasWordHighlights) {
+      // Apply forced word highlights using mergeHTMLWithDiff
+      const changes: ChangeRange[] = lineWordHighlights.map((h) => ({
+        start: h.startColumn,
+        end: h.endColumn,
+        type: h.type,
+      }));
+      const cssClasses: DiffTagClasses = {
+        wordDiff: this.styles.wordDiff,
+        wordAdded: this.styles.wordAdded,
+        wordRemoved: this.styles.wordRemoved,
+      };
+      content = mergeHTMLWithDiff(renderedHTML, changes, cssClasses);
     } else if (renderedHTML) {
       // Use pre-rendered HTML directly for non-word-diff lines
       content = <span dangerouslySetInnerHTML={{ __html: renderedHTML }} />;
+    } else if (hasWordHighlights && typeof value === 'string') {
+      // Apply forced word highlights to plain text (no renderedHTML)
+      const changes: ChangeRange[] = lineWordHighlights.map((h) => ({
+        start: h.startColumn,
+        end: h.endColumn,
+        type: h.type,
+      }));
+      const cssClasses: DiffTagClasses = {
+        wordDiff: this.styles.wordDiff,
+        wordAdded: this.styles.wordAdded,
+        wordRemoved: this.styles.wordRemoved,
+      };
+      // Wrap plain text in a simple span for HTML merging
+      content = mergeHTMLWithDiff(value, changes, cssClasses);
     } else {
       // Fallback to plain text
       content = value;
     }
 
+    // Determine the element type for the line wrapper
+    // When we have word highlights, we've already applied <ins>/<del> tags to the specific words,
+    // so we use 'div' for the wrapper. Otherwise, wrap the entire line in <ins>/<del>.
     let ElementType: keyof IntrinsicElements = 'div';
-    if (added && !hasWordDiff) {
+    if (added && !hasWordDiff && !hasWordHighlights) {
       ElementType = 'ins';
-    } else if (removed && !hasWordDiff) {
+    } else if (removed && !hasWordDiff && !hasWordHighlights) {
       ElementType = 'del';
     }
 
