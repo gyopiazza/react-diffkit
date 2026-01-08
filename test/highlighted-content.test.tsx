@@ -254,3 +254,185 @@ describe("Testing pre-rendered HTML content feature", () => {
     expect(htmlContent).toContain("hljs-title");
   });
 });
+
+describe("Testing word-level diff with HTML highlighting (substring bug fix)", () => {
+  it("Should correctly highlight word that is substring of another word", () => {
+    // This tests the bug where "option" was incorrectly highlighted as "option.avatarU"
+    // instead of highlighting "selectedOption"
+    const oldCode = "!selectedOption.avatarUrl";
+    const newCode = "!option.avatarUrl";
+
+    const oldRenderedLines =
+      '!<span class="var">selectedOption</span>.<span class="prop">avatarUrl</span>';
+    const newRenderedLines =
+      '!<span class="var">option</span>.<span class="prop">avatarUrl</span>';
+
+    const { container } = render(
+      <DiffViewer
+        oldValue={oldCode}
+        newValue={newCode}
+        oldRenderedLines={oldRenderedLines}
+        newRenderedLines={newRenderedLines}
+        splitView={true}
+        disableWordDiff={false}
+        compareMethod="diffWords"
+      />,
+    );
+
+    const htmlContent = container.innerHTML;
+
+    // The removed line should have "selectedOption" highlighted, not "option.avatarU"
+    const deletions = container.querySelectorAll("del");
+    let foundCorrectDeletion = false;
+    deletions.forEach((del) => {
+      if (del.textContent?.includes("selectedOption")) {
+        foundCorrectDeletion = true;
+      }
+    });
+    expect(foundCorrectDeletion).toBe(true);
+
+    // The added line should have "option" highlighted correctly
+    const insertions = container.querySelectorAll("ins");
+    let foundCorrectInsertion = false;
+    insertions.forEach((ins) => {
+      if (ins.textContent === "option") {
+        foundCorrectInsertion = true;
+      }
+    });
+    expect(foundCorrectInsertion).toBe(true);
+
+    // Syntax highlighting should be preserved
+    expect(htmlContent).toContain('class="var"');
+    expect(htmlContent).toContain('class="prop"');
+  });
+
+  it("Should handle complex JSX with nested syntax highlighting", () => {
+    // Real-world example from the bug report
+    const oldCode =
+      "<span className={clsx(!selectedOption.avatarUrl && 'ml-1')}>{selectedOption.label}</span>";
+    const newCode =
+      "<span className={clsx(!option.avatarUrl && 'ml-1')}>{option.label}</span>";
+
+    const oldRenderedLines =
+      '<span class="tag">&lt;span</span> <span class="attr">className</span>={<span class="fn">clsx</span>(!<span class="var">selectedOption</span>.<span class="prop">avatarUrl</span> &amp;&amp; <span class="str">\'ml-1\'</span>)}&gt;{<span class="var">selectedOption</span>.<span class="prop">label</span>}<span class="tag">&lt;/span&gt;</span>';
+    const newRenderedLines =
+      '<span class="tag">&lt;span</span> <span class="attr">className</span>={<span class="fn">clsx</span>(!<span class="var">option</span>.<span class="prop">avatarUrl</span> &amp;&amp; <span class="str">\'ml-1\'</span>)}&gt;{<span class="var">option</span>.<span class="prop">label</span>}<span class="tag">&lt;/span&gt;</span>';
+
+    const { container } = render(
+      <DiffViewer
+        oldValue={oldCode}
+        newValue={newCode}
+        oldRenderedLines={oldRenderedLines}
+        newRenderedLines={newRenderedLines}
+        splitView={true}
+        disableWordDiff={false}
+        compareMethod="diffWords"
+      />,
+    );
+
+    const htmlContent = container.innerHTML;
+
+    // Both occurrences of "selectedOption" should be in deletions
+    const deletions = container.querySelectorAll("del");
+    let selectedOptionCount = 0;
+    deletions.forEach((del) => {
+      if (del.textContent?.includes("selectedOption")) {
+        selectedOptionCount++;
+      }
+    });
+    expect(selectedOptionCount).toBeGreaterThanOrEqual(2);
+
+    // Both occurrences of "option" should be in insertions
+    const insertions = container.querySelectorAll("ins");
+    let optionCount = 0;
+    insertions.forEach((ins) => {
+      if (ins.textContent === "option") {
+        optionCount++;
+      }
+    });
+    expect(optionCount).toBeGreaterThanOrEqual(2);
+
+    // Syntax highlighting should be preserved
+    expect(htmlContent).toContain('class="var"');
+    expect(htmlContent).toContain('class="prop"');
+    expect(htmlContent).toContain('class="tag"');
+    expect(htmlContent).toContain('class="attr"');
+  });
+
+  it("Should handle repeated words correctly", () => {
+    const oldCode = "test test test";
+    const newCode = "test best test";
+
+    const oldRenderedLines =
+      '<span class="w">test</span> <span class="w">test</span> <span class="w">test</span>';
+    const newRenderedLines =
+      '<span class="w">test</span> <span class="w">best</span> <span class="w">test</span>';
+
+    const { container } = render(
+      <DiffViewer
+        oldValue={oldCode}
+        newValue={newCode}
+        oldRenderedLines={oldRenderedLines}
+        newRenderedLines={newRenderedLines}
+        splitView={true}
+        disableWordDiff={false}
+        compareMethod="diffWords"
+      />,
+    );
+
+    // Should only highlight the middle word change
+    const deletions = container.querySelectorAll("del");
+    const insertions = container.querySelectorAll("ins");
+
+    // Should have exactly one deletion (second "test")
+    let testDeletionCount = 0;
+    deletions.forEach((del) => {
+      if (del.textContent === "test") {
+        testDeletionCount++;
+      }
+    });
+    expect(testDeletionCount).toBe(1);
+
+    // Should have exactly one insertion ("best")
+    let bestInsertionCount = 0;
+    insertions.forEach((ins) => {
+      if (ins.textContent === "best") {
+        bestInsertionCount++;
+      }
+    });
+    expect(bestInsertionCount).toBe(1);
+  });
+
+  it("Should handle edge case with empty tokens gracefully", () => {
+    const oldCode = "foo bar";
+    const newCode = "foo baz";
+
+    const oldRenderedLines =
+      '<span class="x">foo</span> <span class="y">bar</span>';
+    const newRenderedLines =
+      '<span class="x">foo</span> <span class="y">baz</span>';
+
+    const { container } = render(
+      <DiffViewer
+        oldValue={oldCode}
+        newValue={newCode}
+        oldRenderedLines={oldRenderedLines}
+        newRenderedLines={newRenderedLines}
+        splitView={true}
+        disableWordDiff={false}
+        compareMethod="diffWords"
+      />,
+    );
+
+    // Should render without crashing
+    const htmlContent = container.innerHTML;
+    expect(htmlContent).toContain('class="x"');
+    expect(htmlContent).toContain('class="y"');
+
+    // Should have proper word diff
+    const deletions = container.querySelectorAll("del");
+    const insertions = container.querySelectorAll("ins");
+    expect(deletions.length).toBeGreaterThan(0);
+    expect(insertions.length).toBeGreaterThan(0);
+  });
+});
