@@ -23,6 +23,7 @@ import {
   type ChangeRange,
   type DiffTagClasses,
   mergeHTMLWithDiff,
+  parseHTML,
 } from './merge-highlighted-html.js';
 
 type IntrinsicElements = JSX.IntrinsicElements;
@@ -255,29 +256,41 @@ class DiffViewer extends React.Component<
   ): ReactElement[] => {
     // If we have pre-rendered HTML, use the HTML merger
     if (renderedHTML) {
+      // Extract plain text from HTML to map token positions correctly
+      const { plainText } = parseHTML(renderedHTML);
+
       // Convert DiffInformation[] to ChangeRange[]
       const changes: ChangeRange[] = [];
-      let currentPos = 0;
+      let searchOffset = 0;
 
       for (const wordDiff of diffArray) {
         const text = wordDiff.value as string;
-        const length = text ? text.length : 0;
+        if (!text || text.length === 0) continue;
+
+        // Find token's actual position in plain text
+        const position = plainText.indexOf(text, searchOffset);
+        if (position === -1) {
+          // Token not found - skip it
+          console.warn(`Token not found in plain text: "${text}"`);
+          continue;
+        }
 
         if (wordDiff.type === DiffType.ADDED) {
           changes.push({
-            start: currentPos,
-            end: currentPos + length,
+            start: position,
+            end: position + text.length,
             type: 'added',
           });
         } else if (wordDiff.type === DiffType.REMOVED) {
           changes.push({
-            start: currentPos,
-            end: currentPos + length,
+            start: position,
+            end: position + text.length,
             type: 'removed',
           });
         }
 
-        currentPos += length;
+        // Move search offset forward to handle repeated tokens
+        searchOffset = position + text.length;
       }
 
       // Prepare CSS classes to inject into diff tags
