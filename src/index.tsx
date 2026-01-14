@@ -443,7 +443,7 @@ class DiffViewer extends React.Component<
               lineNumber && this.onLineNumberClickProxy(lineNumberTemplate)
             }
             className={cn(this.styles.gutter, {
-              [this.styles.emptyGutter]: !lineNumber,
+              [this.styles.emptyGutter]: !content,
               [this.styles.diffAdded]: added,
               [this.styles.diffRemoved]: removed,
               [this.styles.diffChanged]: changed,
@@ -1067,5 +1067,6 @@ export type {
   DiffInformation,
   LineInformation,
   ReactDiffViewerStyles,
-  ReactDiffViewerStylesOverride,
+  ReactDiffViewerStylesOverride
 };
+
