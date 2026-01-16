@@ -24,6 +24,7 @@ import {
   type DiffTagClasses,
   mergeHTMLWithDiff,
   parseHTML,
+} from './merge-highlighted-html.js';
 
 type IntrinsicElements = JSX.IntrinsicElements;
 
