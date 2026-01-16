@@ -42,7 +42,6 @@
     "check": "biome check src/ test/",
     "check:fix": "biome check --write --unsafe src/ test/",
     "prepare": "npm run build"
-
   },
   "dependencies": {
     "@emotion/css": "^11.13.5",
