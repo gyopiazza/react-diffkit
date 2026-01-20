@@ -584,8 +584,8 @@ class DiffViewer extends React.Component<
         </tr>
         {(Boolean(widgetsLeft) || Boolean(widgetsRight)) && (
           <tr>
-            <td colSpan={3}>{widgetsLeft}</td>
-            <td colSpan={3}>{widgetsRight}</td>
+            <td colSpan={3} style={{verticalAlign:'top'}}>{widgetsLeft}</td>
+            <td colSpan={3} style={{verticalAlign:'top'}}>{widgetsRight}</td>
           </tr>
         )}
       </React.Fragment>
