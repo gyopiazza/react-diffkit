@@ -700,9 +700,8 @@ class DiffViewer extends React.Component<
     }
 
     return (
-      <>
+      <React.Fragment key={index}>
         <tr
-          key={index}
           className={cn(
             this.styles.line,
             this.props.lineClassNames?.({ left, right }),
@@ -715,7 +714,7 @@ class DiffViewer extends React.Component<
             <td colSpan={6}>{widgets}</td>
           </tr>
         )}
-      </>
+      </React.Fragment>
     );
   };
 
