@@ -80,6 +80,66 @@ class Diff extends PureComponent {
 | leftTitle                 | `string`                                          | `undefined`                    | Column title for left section of the diff in split view. This will be used as the only title in inline view.                                                                                                                                                                                                                                                                                                     |
 | rightTitle                | `string`                                          | `undefined`                    | Column title for right section of the diff in split view. This will be ignored in inline view.                                                                                                                                                                                                                                                                                                                   |
 | linesOffset               | `number`                                          | `0`                            | Number to start count code lines from.                                                                                                                                                                                                                                                                                                                                                                           |
+| initiallyFileCollapsed    | `boolean`                                         | `false`                        | Sets the initial file collapsed state. When `true`, only the summary banner is shown initially (diff table hidden). Ignored when `fileCollapsed` is provided (controlled mode).                                                                                                                                                                                                                                  |
+| fileCollapsed             | `boolean`                                         | `undefined`                    | Controlled file collapsed state. When provided, the component operates in controlled mode where the parent manages the collapsed state. Must be used with `onFileCollapseChange` callback. When `undefined`, the component uses uncontrolled mode with `initiallyFileCollapsed`.                                                                                                                                  |
+| onFileCollapseChange      | `function`                                        | `undefined`                    | Callback when file collapse state changes. Receives the new collapsed state as a parameter: `(isCollapsed: boolean) => void`. Required for controlled mode, optional for uncontrolled mode.                                                                                                                                                                                                                       |
+
+## Controlled vs Uncontrolled File Collapse
+
+The file collapse feature supports both controlled and uncontrolled modes:
+
+### Uncontrolled Mode (Default)
+
+The component manages its own collapse state internally. Use `initiallyFileCollapsed` to set the initial state:
+
+```javascript
+import React from 'react';
+import ReactDiffViewer from 'react-diffkit';
+
+function MyDiff() {
+  return (
+    <ReactDiffViewer
+      oldValue={oldCode}
+      newValue={newCode}
+      initiallyFileCollapsed={true}
+      onFileCollapseChange={(collapsed) => {
+        console.log('File collapsed state changed:', collapsed);
+      }}
+    />
+  );
+}
+```
+
+### Controlled Mode
+
+The parent component controls the collapse state. Use `fileCollapsed` prop along with `onFileCollapseChange`:
+
+```javascript
+import React, { useState } from 'react';
+import ReactDiffViewer from 'react-diffkit';
+
+function MyDiff() {
+  const [isCollapsed, setIsCollapsed] = useState(true);
+
+  return (
+    <div>
+      {/* External controls */}
+      <button onClick={() => setIsCollapsed(true)}>Collapse All Files</button>
+      <button onClick={() => setIsCollapsed(false)}>Expand All Files</button>
+
+      {/* Controlled diff viewer */}
+      <ReactDiffViewer
+        oldValue={oldCode}
+        newValue={newCode}
+        fileCollapsed={isCollapsed}
+        onFileCollapseChange={setIsCollapsed}
+      />
+    </div>
+  );
+}
+```
+
+**Note:** When `fileCollapsed` is provided (even if `false`), the component operates in controlled mode and `initiallyFileCollapsed` is ignored. In development mode, warnings will be shown if both props are provided or if `fileCollapsed` is used without `onFileCollapseChange`.
 
 ## Instance Methods
 

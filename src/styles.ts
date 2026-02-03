@@ -196,6 +196,20 @@ export default (
     gap: '0.5em',
     fontFamily: 'monospace',
     fill: variables.diffViewerTitleColor,
+    cursor: 'pointer',
+    border: 'none',
+    width: '100%',
+    textAlign: 'left',
+    ':hover': {
+      opacity: 0.95,
+    },
+    ':focus': {
+      outline: `2px solid ${variables.addedGutterColor}`,
+      outlineOffset: '-2px',
+    },
+    ':active': {
+      opacity: 0.9,
+    },
   });
 
   const diffContainer = css({

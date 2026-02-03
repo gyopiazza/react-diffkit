@@ -19,6 +19,7 @@ import computeStyles, {
 } from './styles.js';
 
 import { Fold } from './fold.js';
+import { ChevronDown, ChevronUp } from './chevron.js';
 import {
   type ChangeRange,
   type DiffTagClasses,
@@ -155,6 +156,26 @@ export interface ReactDiffViewerProps {
    * Useful for highlighting renamed symbols or other semantic changes.
    */
   wordHighlights?: WordHighlight[];
+  /**
+   * Sets the initial file collapsed state.
+   * When true, only the summary banner is shown initially (diff table hidden).
+   * When false or undefined, the full diff table is shown (default behavior).
+   * Note: Ignored when `fileCollapsed` is provided (controlled mode).
+   */
+  initiallyFileCollapsed?: boolean;
+  /**
+   * Controlled file collapsed state.
+   * When provided, the component operates in controlled mode where the parent
+   * manages the collapsed state. Must be used with `onFileCollapseChange` callback.
+   * When undefined, the component uses uncontrolled mode with `initiallyFileCollapsed`.
+   */
+  fileCollapsed?: boolean;
+  /**
+   * Callback when file collapse state changes.
+   * Receives the new collapsed state as a parameter.
+   * Note: Required for controlled mode, optional for uncontrolled mode.
+   */
+  onFileCollapseChange?: (isCollapsed: boolean) => void;
 }
 
 export interface ReactDiffViewerState {
@@ -162,6 +183,7 @@ export interface ReactDiffViewerState {
   expandedBlocks?: number[];
   noSelect?: 'left' | 'right';
   isCollapsed?: boolean;
+  isFileCollapsed?: boolean;
 }
 
 class DiffViewer extends React.Component<
@@ -190,11 +212,63 @@ class DiffViewer extends React.Component<
   public constructor(props: ReactDiffViewerProps) {
     super(props);
 
+    // Warn if both controlled and uncontrolled props are provided
+    if (process.env.NODE_ENV !== 'production') {
+      if (props.fileCollapsed !== undefined && props.initiallyFileCollapsed !== undefined) {
+        console.warn(
+          'DiffViewer: Both `fileCollapsed` and `initiallyFileCollapsed` provided. ' +
+          '`fileCollapsed` takes precedence (controlled mode). `initiallyFileCollapsed` ignored.'
+        );
+      }
+      if (props.fileCollapsed !== undefined && !props.onFileCollapseChange) {
+        console.warn(
+          'DiffViewer: `fileCollapsed` provided without `onFileCollapseChange` handler. ' +
+          'Button will be read-only.'
+        );
+      }
+    }
+
     this.state = {
       expandedBlocks: [],
       noSelect: undefined,
       isCollapsed: props.initiallyCollapsed ?? false,
+      // Initialize from controlled prop if provided, otherwise from uncontrolled prop
+      isFileCollapsed: props.fileCollapsed !== undefined
+        ? props.fileCollapsed
+        : (props.initiallyFileCollapsed ?? false),
     };
+  }
+
+  /**
+   * Determines if the component is in controlled mode for file collapse.
+   */
+  private isFileCollapseControlled = (): boolean => {
+    return this.props.fileCollapsed !== undefined;
+  };
+
+  /**
+   * Gets the current file collapsed state, respecting controlled/uncontrolled mode.
+   */
+  private getFileCollapsedState = (): boolean => {
+    if (this.isFileCollapseControlled()) {
+      return this.props.fileCollapsed!;
+    }
+    return this.state.isFileCollapsed!;
+  };
+
+  /**
+   * Syncs internal state with controlled prop changes.
+   */
+  public componentDidUpdate(prevProps: ReactDiffViewerProps): void {
+    // Only sync if in controlled mode and the prop actually changed
+    if (
+      this.isFileCollapseControlled() &&
+      prevProps.fileCollapsed !== this.props.fileCollapsed
+    ) {
+      this.setState({
+        isFileCollapsed: this.props.fileCollapsed!,
+      });
+    }
   }
 
   /**
@@ -1011,24 +1085,64 @@ class DiffViewer extends React.Component<
 
     return (
       <div>
-        <div className={this.styles.summary} role={'banner'}>
-          <button
-            type={'button'}
-            className={this.styles.allExpandButton}
-            onClick={() => {
-              this.setState({
-                expandedBlocks: allExpanded
-                  ? []
-                  : nodes.blocks.map((b) => b.index),
-              });
-            }}
-            disabled={this.state.isCollapsed}
-          >
-            {allExpanded ? <Fold /> : <Expand />}
-          </button>{' '}
+        <div
+          className={this.styles.summary}
+          role={'button'}
+          tabIndex={0}
+          aria-label={this.getFileCollapsedState() ? "Expand file diff" : "Collapse file diff"}
+          onClick={() => {
+            const currentState = this.getFileCollapsedState();
+            const newState = !currentState;
+
+            if (this.isFileCollapseControlled()) {
+              // Controlled mode: only fire callback, parent updates prop
+              this.props.onFileCollapseChange?.(newState);
+            } else {
+              // Uncontrolled mode: update state AND fire callback
+              this.setState({ isFileCollapsed: newState });
+              this.props.onFileCollapseChange?.(newState);
+            }
+          }}
+          onKeyDown={(e: React.KeyboardEvent) => {
+            // Handle Enter and Space keys for accessibility
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              const currentState = this.getFileCollapsedState();
+              const newState = !currentState;
+
+              if (this.isFileCollapseControlled()) {
+                this.props.onFileCollapseChange?.(newState);
+              } else {
+                this.setState({ isFileCollapsed: newState });
+                this.props.onFileCollapseChange?.(newState);
+              }
+            }
+          }}
+        >
           {totalChanges}
           <div style={{ display: 'flex', gap: '1px' }}>{blocks}</div>
           {this.props.summary ? <span>{this.props.summary}</span> : null}
+          <div style={{display: 'flex', gap:'0.5rem', marginLeft: 'auto', alignItems: 'center'}}>
+            <span aria-hidden="true" style={{display: 'flex', alignItems: 'center'}}>
+              {this.getFileCollapsedState() ? <ChevronUp /> : <ChevronDown />}
+            </span>
+            <button
+              type={'button'}
+              className={this.styles.allExpandButton}
+              onClick={(e) => {
+                e.stopPropagation();
+                this.setState({
+                  expandedBlocks: allExpanded
+                  ? []
+                  : nodes.blocks.map((b) => b.index),
+                });
+              }}
+              disabled={this.state.isCollapsed || this.getFileCollapsedState()}
+              aria-label={allExpanded ? "Collapse all code blocks" : "Expand all code blocks"}
+            >
+              {allExpanded ? <Fold /> : <Expand />}
+            </button>
+          </div>
         </div>
         {this.state.isCollapsed ? (
           <table
@@ -1038,7 +1152,7 @@ class DiffViewer extends React.Component<
           >
             <tbody>{this.renderCollapsedPlaceholder(totalChanges)}</tbody>
           </table>
-        ) : (
+        ) : !this.getFileCollapsedState() ? (
           <table
             className={cn(this.styles.diffContainer, {
               [this.styles.splitView]: splitView,
@@ -1103,7 +1217,7 @@ class DiffViewer extends React.Component<
               {nodes.diffNodes}
             </tbody>
           </table>
-        )}
+        ) : null}
       </div>
     );
   };
