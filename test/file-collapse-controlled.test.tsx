@@ -60,7 +60,7 @@ describe('File Collapse - Controlled Mode', () => {
     );
 
     // Click the summary banner to toggle collapse
-    const banner = container.querySelector('[role="banner"]');
+    const banner = container.querySelector('[role="button"]');
     fireEvent.click(banner!);
 
     expect(handleChange).toHaveBeenCalledWith(true);
@@ -78,7 +78,7 @@ describe('File Collapse - Controlled Mode', () => {
     );
 
     // Click the summary banner
-    const banner = container.querySelector('[role="banner"]');
+    const banner = container.querySelector('[role="button"]');
     fireEvent.click(banner!);
 
     // Callback should have been called
@@ -154,7 +154,7 @@ describe('File Collapse - Controlled Mode', () => {
       />
     );
 
-    const banner = container.querySelector('[role="banner"]');
+    const banner = container.querySelector('[role="button"]');
     fireEvent.click(banner!);
 
     // Should fire callback (controlled mode)
@@ -174,10 +174,9 @@ describe('File Collapse - Controlled Mode', () => {
       />
     );
 
-    // Find the file collapse button (first button in the summary banner)
-    const buttons = container.querySelectorAll('[role="banner"] button');
-    const fileCollapseButton = buttons[0] as HTMLButtonElement;
-    expect(fileCollapseButton?.getAttribute('aria-label')).toBe('Expand file');
+    // Check the banner aria-label
+    const banner = container.querySelector('[role="button"]');
+    expect(banner?.getAttribute('aria-label')).toBe('Expand file diff');
 
     rerender(
       <DiffViewer
@@ -187,9 +186,8 @@ describe('File Collapse - Controlled Mode', () => {
       />
     );
 
-    const buttons2 = container.querySelectorAll('[role="banner"] button');
-    const fileCollapseButton2 = buttons2[0] as HTMLButtonElement;
-    expect(fileCollapseButton2?.getAttribute('aria-label')).toBe('Collapse file');
+    const banner2 = container.querySelector('[role="button"]');
+    expect(banner2?.getAttribute('aria-label')).toBe('Collapse file diff');
   });
 
   it('should disable expand/collapse all button when fileCollapsed is true', () => {
@@ -201,10 +199,37 @@ describe('File Collapse - Controlled Mode', () => {
       />
     );
 
-    // Find the expand/collapse all button (second button in the summary banner)
-    const buttons = container.querySelectorAll('[role="banner"] button');
-    const allExpandButton = buttons[1]; // Second button is the expand/collapse all
+    // Find the expand/collapse all button (only button in the summary banner)
+    const banner = container.querySelector('[role="button"]');
+    const buttons = banner?.querySelectorAll('button');
+    const allExpandButton = buttons?.[0]; // The expand/collapse all button
     expect(allExpandButton?.hasAttribute('disabled')).toBe(true);
+  });
+
+  it('should support keyboard interaction on banner', () => {
+    const { container } = render(
+      <DiffViewer
+        oldValue={oldValue}
+        newValue={newValue}
+        initiallyFileCollapsed={false}
+      />
+    );
+
+    const banner = container.querySelector('[role="button"]');
+
+    // Verify banner is keyboard accessible
+    expect(banner?.getAttribute('tabIndex')).toBe('0');
+    expect(banner?.getAttribute('role')).toBe('button');
+
+    // Test Enter key
+    fireEvent.keyDown(banner!, { key: 'Enter' });
+    let table = container.querySelector('table');
+    expect(table).toBeNull(); // File should collapse
+
+    // Test Space key
+    fireEvent.keyDown(banner!, { key: ' ' });
+    table = container.querySelector('table');
+    expect(table).not.toBeNull(); // File should expand
   });
 });
 
@@ -223,7 +248,7 @@ describe('File Collapse - Uncontrolled Mode (Backward Compatibility)', () => {
     expect(table).toBeNull();
 
     // Click to expand
-    const banner = container.querySelector('[role="banner"]');
+    const banner = container.querySelector('[role="button"]');
     fireEvent.click(banner!);
 
     // Should now be expanded
@@ -242,7 +267,7 @@ describe('File Collapse - Uncontrolled Mode (Backward Compatibility)', () => {
       />
     );
 
-    const banner = container.querySelector('[role="banner"]');
+    const banner = container.querySelector('[role="button"]');
     fireEvent.click(banner!);
 
     // Callback should fire
@@ -262,7 +287,7 @@ describe('File Collapse - Uncontrolled Mode (Backward Compatibility)', () => {
       />
     );
 
-    const banner = container.querySelector('[role="banner"]');
+    const banner = container.querySelector('[role="button"]');
 
     // Start expanded
     let table = container.querySelector('table');
@@ -441,7 +466,7 @@ describe('File Collapse - Edge Cases', () => {
     expect(table).toBeNull();
 
     // Click banner
-    const banner = container.querySelector('[role="banner"]');
+    const banner = container.querySelector('[role="button"]');
     fireEvent.click(banner!);
 
     // Should stay collapsed (no callback, no state update)

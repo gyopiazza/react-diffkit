@@ -30,7 +30,6 @@ export interface ReactDiffViewerStyles {
   noSelect?: string;
   splitView?: string;
   allExpandButton?: string;
-  fileCollapseButton?: string;
   collapsedRow?: string;
   collapsedContentContainer?: string;
   collapsedExpandButton?: string;
@@ -98,7 +97,6 @@ export interface ReactDiffViewerStylesOverride {
   titleBlock?: Interpolation;
   splitView?: Interpolation;
   allExpandButton?: Interpolation;
-  fileCollapseButton?: Interpolation;
   collapsedRow?: Interpolation;
   collapsedContentContainer?: Interpolation;
   collapsedExpandButton?: Interpolation;
@@ -199,6 +197,19 @@ export default (
     fontFamily: 'monospace',
     fill: variables.diffViewerTitleColor,
     cursor: 'pointer',
+    border: 'none',
+    width: '100%',
+    textAlign: 'left',
+    ':hover': {
+      opacity: 0.95,
+    },
+    ':focus': {
+      outline: `2px solid ${variables.addedGutterColor}`,
+      outlineOffset: '-2px',
+    },
+    ':active': {
+      opacity: 0.9,
+    },
   });
 
   const diffContainer = css({
@@ -251,20 +262,6 @@ export default (
     ':focus': {
       outline: `1px ${variables.addedGutterColor} solid`,
     },
-  });
-
-  const fileCollapseButton = css({
-    background: 'transparent',
-    border: 'none',
-    cursor: 'pointer',
-    display: 'inline-flex',
-    alignItems: 'center',
-    padding: '4px',
-    marginRight: '8px',
-    ':hover': {
-      opacity: 0.7,
-    },
-    label: 'file-collapse-button',
   });
 
   const titleBlock = css({
@@ -579,7 +576,6 @@ export default (
     codeFoldContent,
     titleBlock,
     allExpandButton,
-    fileCollapseButton,
     collapsedRow,
     collapsedContentContainer,
     collapsedExpandButton,

@@ -1085,30 +1085,47 @@ class DiffViewer extends React.Component<
 
     return (
       <div>
-        <div className={this.styles.summary} role={'banner'} onClick={() => {
+        <div
+          className={this.styles.summary}
+          role={'button'}
+          tabIndex={0}
+          aria-label={this.getFileCollapsedState() ? "Expand file diff" : "Collapse file diff"}
+          onClick={() => {
+            const currentState = this.getFileCollapsedState();
+            const newState = !currentState;
+
+            if (this.isFileCollapseControlled()) {
+              // Controlled mode: only fire callback, parent updates prop
+              this.props.onFileCollapseChange?.(newState);
+            } else {
+              // Uncontrolled mode: update state AND fire callback
+              this.setState({ isFileCollapsed: newState });
+              this.props.onFileCollapseChange?.(newState);
+            }
+          }}
+          onKeyDown={(e: React.KeyboardEvent) => {
+            // Handle Enter and Space keys for accessibility
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
               const currentState = this.getFileCollapsedState();
               const newState = !currentState;
 
               if (this.isFileCollapseControlled()) {
-                // Controlled mode: only fire callback, parent updates prop
                 this.props.onFileCollapseChange?.(newState);
               } else {
-                // Uncontrolled mode: update state AND fire callback
                 this.setState({ isFileCollapsed: newState });
                 this.props.onFileCollapseChange?.(newState);
               }
-            }}>
+            }
+          }}
+        >
           {totalChanges}
           <div style={{ display: 'flex', gap: '1px' }}>{blocks}</div>
           {this.props.summary ? <span>{this.props.summary}</span> : null}
-          <div style={{display: 'flex', gap:'0.5rem', marginLeft: 'auto'}}>
-            <button
-              type={'button'}
-              className={this.styles.fileCollapseButton}
-              aria-label={this.getFileCollapsedState() ? "Expand file" : "Collapse file"}
-              >
+          <div style={{display: 'flex', gap:'0.5rem', marginLeft: 'auto', alignItems: 'center'}}>
+            <span aria-hidden="true" style={{display: 'flex', alignItems: 'center'}}>
               {this.getFileCollapsedState() ? <ChevronUp /> : <ChevronDown />}
-            </button>
+            </span>
             <button
               type={'button'}
               className={this.styles.allExpandButton}
@@ -1121,7 +1138,8 @@ class DiffViewer extends React.Component<
                 });
               }}
               disabled={this.state.isCollapsed || this.getFileCollapsedState()}
-              >
+              aria-label={allExpanded ? "Collapse all code blocks" : "Expand all code blocks"}
+            >
               {allExpanded ? <Fold /> : <Expand />}
             </button>
           </div>

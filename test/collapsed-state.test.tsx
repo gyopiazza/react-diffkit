@@ -70,14 +70,14 @@ describe("Collapsed State Feature", (): void => {
       <DiffViewer oldValue={oldCode} newValue={newCode} initiallyCollapsed={false} />,
     );
 
-    let banner = container.querySelector('[role="banner"]');
+    let banner = container.querySelector('[role="button"]');
     expect(banner).toBeTruthy();
 
     rerender(
       <DiffViewer oldValue={oldCode} newValue={newCode} initiallyCollapsed={true} />,
     );
 
-    banner = container.querySelector('[role="banner"]');
+    banner = container.querySelector('[role="button"]');
     expect(banner).toBeTruthy();
   });
 
@@ -109,9 +109,9 @@ describe("Collapsed State Feature", (): void => {
     );
 
     // The fold/expand all button should be disabled
-    const banner = container.querySelector('[role="banner"]');
+    const banner = container.querySelector('[role="button"]');
     const buttons = banner?.querySelectorAll("button");
-    const foldButton = buttons?.[1]; // Second button is the fold/expand all button
+    const foldButton = buttons?.[0]; // The fold/expand all button (now the only button)
     expect(foldButton?.disabled).toBe(true);
   });
 
