@@ -19,6 +19,7 @@ import computeStyles, {
 } from './styles.js';
 
 import { Fold } from './fold.js';
+import { ChevronDown, ChevronUp } from './chevron.js';
 import {
   type ChangeRange,
   type DiffTagClasses,
@@ -155,6 +156,17 @@ export interface ReactDiffViewerProps {
    * Useful for highlighting renamed symbols or other semantic changes.
    */
   wordHighlights?: WordHighlight[];
+  /**
+   * Sets the initial file collapsed state.
+   * When true, only the summary banner is shown initially (diff table hidden).
+   * When false or undefined, the full diff table is shown (default behavior).
+   */
+  initiallyFileCollapsed?: boolean;
+  /**
+   * Callback when file collapse state changes.
+   * Receives the new collapsed state as a parameter.
+   */
+  onFileCollapseChange?: (isCollapsed: boolean) => void;
 }
 
 export interface ReactDiffViewerState {
@@ -162,6 +174,7 @@ export interface ReactDiffViewerState {
   expandedBlocks?: number[];
   noSelect?: 'left' | 'right';
   isCollapsed?: boolean;
+  isFileCollapsed?: boolean;
 }
 
 class DiffViewer extends React.Component<
@@ -194,6 +207,7 @@ class DiffViewer extends React.Component<
       expandedBlocks: [],
       noSelect: undefined,
       isCollapsed: props.initiallyCollapsed ?? false,
+      isFileCollapsed: props.initiallyFileCollapsed ?? false,
     };
   }
 
@@ -1011,24 +1025,38 @@ class DiffViewer extends React.Component<
 
     return (
       <div>
-        <div className={this.styles.summary} role={'banner'}>
-          <button
-            type={'button'}
-            className={this.styles.allExpandButton}
-            onClick={() => {
-              this.setState({
-                expandedBlocks: allExpanded
-                  ? []
-                  : nodes.blocks.map((b) => b.index),
-              });
-            }}
-            disabled={this.state.isCollapsed}
-          >
-            {allExpanded ? <Fold /> : <Expand />}
-          </button>{' '}
+        <div className={this.styles.summary} role={'banner'} onClick={() => {
+              const newState = !this.state.isFileCollapsed;
+              this.setState({ isFileCollapsed: newState });
+              this.props.onFileCollapseChange?.(newState);
+            }}>
           {totalChanges}
           <div style={{ display: 'flex', gap: '1px' }}>{blocks}</div>
           {this.props.summary ? <span>{this.props.summary}</span> : null}
+          <div style={{display: 'flex', gap:'0.5rem', marginLeft: 'auto'}}>
+            <button
+              type={'button'}
+              className={this.styles.fileCollapseButton}
+              aria-label={this.state.isFileCollapsed ? "Expand file" : "Collapse file"}
+              >
+              {this.state.isFileCollapsed ? <ChevronUp /> : <ChevronDown />}
+            </button>
+            <button
+              type={'button'}
+              className={this.styles.allExpandButton}
+              onClick={(e) => {
+                e.stopPropagation();
+                this.setState({
+                  expandedBlocks: allExpanded
+                  ? []
+                  : nodes.blocks.map((b) => b.index),
+                });
+              }}
+              disabled={this.state.isCollapsed || this.state.isFileCollapsed}
+              >
+              {allExpanded ? <Fold /> : <Expand />}
+            </button>
+          </div>
         </div>
         {this.state.isCollapsed ? (
           <table
@@ -1038,7 +1066,7 @@ class DiffViewer extends React.Component<
           >
             <tbody>{this.renderCollapsedPlaceholder(totalChanges)}</tbody>
           </table>
-        ) : (
+        ) : !this.state.isFileCollapsed ? (
           <table
             className={cn(this.styles.diffContainer, {
               [this.styles.splitView]: splitView,
@@ -1103,7 +1131,7 @@ class DiffViewer extends React.Component<
               {nodes.diffNodes}
             </tbody>
           </table>
-        )}
+        ) : null}
       </div>
     );
   };
