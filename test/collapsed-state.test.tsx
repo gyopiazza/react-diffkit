@@ -110,7 +110,8 @@ describe("Collapsed State Feature", (): void => {
 
     // The fold/expand all button should be disabled
     const banner = container.querySelector('[role="banner"]');
-    const foldButton = banner?.querySelector("button");
+    const buttons = banner?.querySelectorAll("button");
+    const foldButton = buttons?.[1]; // Second button is the fold/expand all button
     expect(foldButton?.disabled).toBe(true);
   });
 
