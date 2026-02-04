@@ -1119,14 +1119,7 @@ class DiffViewer extends React.Component<
             }
           }}
         >
-          {totalChanges}
-          <div style={{ display: 'flex', gap: '1px' }}>{blocks}</div>
-          {this.props.summary ? <span>{this.props.summary}</span> : null}
-          <div style={{display: 'flex', gap:'0.5rem', marginLeft: 'auto', alignItems: 'center'}}>
-            <span aria-hidden="true" style={{display: 'flex', alignItems: 'center'}}>
-              {this.getFileCollapsedState() ? <ChevronUp /> : <ChevronDown />}
-            </span>
-            <button
+          <button
               type={'button'}
               className={this.styles.allExpandButton}
               onClick={(e) => {
@@ -1142,6 +1135,13 @@ class DiffViewer extends React.Component<
             >
               {allExpanded ? <Fold /> : <Expand />}
             </button>
+          {totalChanges}
+          <div style={{ display: 'flex', gap: '1px' }}>{blocks}</div>
+          {this.props.summary ? <span>{this.props.summary}</span> : null}
+          <div style={{marginLeft: 'auto'}}>
+            <span aria-hidden="true" style={{display: 'flex', alignItems: 'center'}}>
+              {this.getFileCollapsedState() ? <ChevronUp /> : <ChevronDown />}
+            </span>
           </div>
         </div>
         {this.state.isCollapsed ? (
