@@ -311,6 +311,12 @@ class DiffViewer extends React.Component<
   ) => ReactDiffViewerStyles = memoize(computeStyles);
 
   /**
+   * Memoized version of computeLineInformation to prevent redundant diff computation
+   * on re-renders when props haven't changed.
+   */
+  private computeLineInformationMemoized = memoize(computeLineInformation);
+
+  /**
    * Returns a function with clicked line number in the closure. Returns an no-op function when no
    * onLineNumberClick handler is supplied.
    *
@@ -942,7 +948,7 @@ class DiffViewer extends React.Component<
       oldRenderedLines,
       newRenderedLines,
     } = this.props;
-    const { lineInformation, diffLines } = computeLineInformation(
+    const { lineInformation, diffLines } = this.computeLineInformationMemoized(
       oldValue,
       newValue,
       disableWordDiff,

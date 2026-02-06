@@ -1,7 +1,13 @@
 import * as diff from 'diff';
+import memoize from 'memoize-one';
 import { processRenderedLines } from './split-highlighted-html.js';
 
 const jsDiff: { [key: string]: any } = diff;
+
+// Memoize HTML parsing to avoid redundant DOMParser operations
+const processRenderedLinesMemoized = memoize(
+  (renderedLines?: string) => processRenderedLines(renderedLines)
+);
 
 export enum DiffType {
   DEFAULT = 0,
@@ -157,15 +163,21 @@ const computeLineInformation = (
 
   // Split pre-rendered HTML by lines if provided
   // Handles both continuous HTML (highlight.js) and line-separated formats
-  const oldHTMLLines = processRenderedLines(oldRenderedLines);
-  const newHTMLLines = processRenderedLines(newRenderedLines);
+  const oldHTMLLines = processRenderedLinesMemoized(oldRenderedLines);
+  const newHTMLLines = processRenderedLinesMemoized(newRenderedLines);
+
+  // Convert showLines array to Set for O(1) lookups
+  const showLinesSet: Set<string> | undefined = showLines && showLines.length > 0
+    ? new Set(showLines)
+    : undefined;
 
   let rightLineNumber = linesOffset;
   let leftLineNumber = linesOffset;
   let lineInformation: LineInformation[] = [];
   let counter = 0;
   const diffLines: number[] = [];
-  const ignoreDiffIndexes: string[] = [];
+  const diffLinesSet: Set<number> = new Set();
+  const ignoreDiffIndexes: Set<string> = new Set();
   const getLineInformation = (
     value: string,
     diffIndex: number,
@@ -180,7 +192,7 @@ const computeLineInformation = (
         const left: DiffInformation = {};
         const right: DiffInformation = {};
         if (
-          ignoreDiffIndexes.includes(`${diffIndex}-${lineIndex}`) ||
+          ignoreDiffIndexes.has(`${diffIndex}-${lineIndex}`) ||
           (evaluateOnlyFirstLine && lineIndex !== 0)
         ) {
           return undefined;
@@ -218,10 +230,10 @@ const computeLineInformation = (
                   type,
                 } = nextDiffLineInfo[0].right;
 
-                // When identified as modification, push the next diff to ignore
-                // list as the next value will be added in this line computation as
+                // When identified as modification, add the next diff to ignore
+                // set as the next value will be added in this line computation as
                 // right and left values.
-                ignoreDiffIndexes.push(`${diffIndex + 1}-${lineIndex}`);
+                ignoreDiffIndexes.add(`${diffIndex + 1}-${lineIndex}`);
 
                 right.lineNumber = lineNumber;
                 // Attach pre-rendered HTML if available (1-indexed to 0-indexed)
@@ -263,8 +275,9 @@ const computeLineInformation = (
             }
           }
           if (countAsChange && !evaluateOnlyFirstLine) {
-            if (!diffLines.includes(counter)) {
+            if (!diffLinesSet.has(counter)) {
               diffLines.push(counter);
+              diffLinesSet.add(counter);
             }
           }
         } else {
@@ -288,11 +301,12 @@ const computeLineInformation = (
         }
 
         if (
-          showLines?.includes(`L-${left.lineNumber}`) ||
-          (showLines?.includes(`R-${right.lineNumber}`) &&
-            !diffLines.includes(counter))
+          showLinesSet?.has(`L-${left.lineNumber}`) ||
+          (showLinesSet?.has(`R-${right.lineNumber}`) &&
+            !diffLinesSet.has(counter))
         ) {
           diffLines.push(counter);
+          diffLinesSet.add(counter);
         }
 
         if (!evaluateOnlyFirstLine) {
@@ -304,10 +318,10 @@ const computeLineInformation = (
   };
 
   diffArray.forEach(({ added, removed, value }: diff.Change, index): void => {
-    lineInformation = [
-      ...lineInformation,
-      ...getLineInformation(value, index, added, removed),
-    ];
+    const newLines = getLineInformation(value, index, added, removed);
+    for (const line of newLines) {
+      lineInformation.push(line);
+    }
   });
 
   return {
