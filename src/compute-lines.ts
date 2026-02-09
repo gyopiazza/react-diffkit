@@ -1,3 +1,4 @@
+import type { StructuredPatch } from 'diff';
 import * as diff from 'diff';
 import memoize from 'memoize-one';
 import { processRenderedLines } from './split-highlighted-html.js';
@@ -119,6 +120,112 @@ const computeDiff = (
 };
 
 /**
+ * Converts a StructuredPatch (from diff.parsePatch or diff.structuredPatch)
+ * into the Change[] format used by computeLineInformation.
+ *
+ * This allows reusing all existing line processing logic while skipping
+ * the expensive diff computation step.
+ *
+ * @param patch Pre-computed structured patch
+ * @param oldValue Full old file content (for context lines)
+ * @param newValue Full new file content (for context lines)
+ * @returns Change[] array compatible with existing pipeline
+ */
+const structuredPatchToChange = (
+  patch: StructuredPatch,
+  oldValue: string,
+  newValue: string,
+): diff.Change[] => {
+  const changes: diff.Change[] = [];
+
+  // Split full file content into lines for reference
+  const oldLines = oldValue.split('\n');
+  const newLines = newValue.split('\n');
+
+  let oldLineIndex = 0;
+  let newLineIndex = 0;
+
+  // Process each hunk in the patch
+  for (const hunk of patch.hunks) {
+    // Add context before hunk (unchanged lines)
+    const contextBefore = hunk.oldStart - 1 - oldLineIndex;
+    if (contextBefore > 0) {
+      const contextLines = oldLines.slice(oldLineIndex, oldLineIndex + contextBefore);
+      changes.push({
+        value: contextLines.join('\n') + '\n',
+        count: contextBefore,
+        added: undefined,
+        removed: undefined,
+      });
+      oldLineIndex += contextBefore;
+      newLineIndex += contextBefore;
+    }
+
+    // Process hunk lines (format: " " = context, "-" = removed, "+" = added)
+    let currentChange: diff.Change | null = null;
+
+    for (const line of hunk.lines) {
+      const prefix = line[0];
+      const content = line.slice(1); // Remove prefix
+
+      if (prefix === ' ') {
+        // Context line - flush current change and add context
+        if (currentChange) {
+          changes.push(currentChange);
+          currentChange = null;
+        }
+        changes.push({
+          value: content + '\n',
+          count: 1,
+          added: undefined,
+          removed: undefined,
+        });
+        oldLineIndex++;
+        newLineIndex++;
+      } else if (prefix === '-') {
+        // Removed line
+        if (!currentChange || !currentChange.removed) {
+          if (currentChange) changes.push(currentChange);
+          currentChange = { value: '', removed: true, added: undefined, count: 0 };
+        }
+        currentChange.value += content + '\n';
+        currentChange.count!++;
+        oldLineIndex++;
+      } else if (prefix === '+') {
+        // Added line
+        if (!currentChange || !currentChange.added) {
+          if (currentChange) changes.push(currentChange);
+          currentChange = { value: '', added: true, removed: undefined, count: 0 };
+        }
+        currentChange.value += content + '\n';
+        currentChange.count!++;
+        newLineIndex++;
+      }
+    }
+
+    // Flush final change from hunk
+    if (currentChange) {
+      changes.push(currentChange);
+      currentChange = null;
+    }
+  }
+
+  // Add remaining context after all hunks
+  const remainingOld = oldLines.length - oldLineIndex;
+  if (remainingOld > 0) {
+    const contextLines = oldLines.slice(oldLineIndex);
+    changes.push({
+      value: contextLines.join('\n') + '\n',
+      count: remainingOld,
+      added: undefined,
+      removed: undefined,
+    });
+  }
+
+  return changes;
+};
+
+/**
  * [TODO]: Think about moving common left and right value assignment to a
  * common place. Better readability?
  *
@@ -135,6 +242,7 @@ const computeDiff = (
  * @param oldRenderedLines Pre-rendered HTML for old string (optional)
  * @param newRenderedLines Pre-rendered HTML for new string (optional)
  * @param ignoreWhitespace Flag to enable/disable whitespace ignoring in line comparison
+ * @param preComputedDiff Pre-computed diff array (optional) - when provided, skips diff.diffLines()
  */
 const computeLineInformation = (
   oldString: string | Record<string, unknown>,
@@ -148,17 +256,23 @@ const computeLineInformation = (
   oldRenderedLines?: string,
   newRenderedLines?: string,
   ignoreWhitespace = false,
+  preComputedDiff?: diff.Change[],
 ): ComputedLineInformation => {
   let diffArray: diff.Change[] = [];
 
-  // Use diffLines for strings, and diffJson for objects...
-  if (typeof oldString === 'string' && typeof newString === 'string') {
-    diffArray = diff.diffLines(oldString, newString, {
-      newlineIsToken: false,
-      ignoreWhitespace,
-    });
+  // Use pre-computed diff if provided (SKIP EXPENSIVE COMPUTATION)
+  if (preComputedDiff) {
+    diffArray = preComputedDiff;
   } else {
-    diffArray = diff.diffJson(oldString, newString);
+    // Use diffLines for strings, and diffJson for objects...
+    if (typeof oldString === 'string' && typeof newString === 'string') {
+      diffArray = diff.diffLines(oldString, newString, {
+        newlineIsToken: false,
+        ignoreWhitespace,
+      });
+    } else {
+      diffArray = diff.diffJson(oldString, newString);
+    }
   }
 
   // Split pre-rendered HTML by lines if provided
@@ -330,4 +444,4 @@ const computeLineInformation = (
   };
 };
 
-export { computeLineInformation };
+export { computeLineInformation, structuredPatchToChange };
