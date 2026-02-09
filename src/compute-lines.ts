@@ -444,4 +444,56 @@ const computeLineInformation = (
   };
 };
 
+/**
+ * Lightweight function to count total changes without full line processing.
+ * Used when initiallyCollapsed=true to show change count without expensive computation.
+ *
+ * @param oldValue Old value to compare
+ * @param newValue New value to compare
+ * @param compareMethod JsDiff text diff method
+ * @param preComputedDiff Pre-computed diff array (optional)
+ * @returns Object with additions and deletions counts
+ */
+export const computeChangeCount = (
+  oldValue: string | Record<string, unknown>,
+  newValue: string | Record<string, unknown>,
+  compareMethod:
+    | DiffMethod
+    | ((oldStr: string, newStr: string) => diff.Change[]) = DiffMethod.CHARS,
+  preComputedDiff?: diff.Change[],
+): { additions: number; deletions: number } => {
+  // Handle JSON mode - stringify first
+  if (typeof oldValue !== 'string' || typeof newValue !== 'string') {
+    const oldString = JSON.stringify(oldValue, null, 2);
+    const newString = JSON.stringify(newValue, null, 2);
+    return computeChangeCount(oldString, newString, compareMethod, preComputedDiff);
+  }
+
+  // Use pre-computed diff if available, otherwise compute line-level diff
+  let diffArray: diff.Change[];
+  if (preComputedDiff) {
+    diffArray = preComputedDiff;
+  } else {
+    // For strings, use diffLines (same as computeLineInformation)
+    diffArray = diff.diffLines(oldValue, newValue, {
+      newlineIsToken: false,
+      ignoreWhitespace: false,
+    });
+  }
+
+  let additions = 0;
+  let deletions = 0;
+
+  for (const change of diffArray) {
+    const count = change.count ?? 1;
+    if (change.added) {
+      additions += count;
+    } else if (change.removed) {
+      deletions += count;
+    }
+  }
+
+  return { additions, deletions };
+};
+
 export { computeLineInformation, structuredPatchToChange };

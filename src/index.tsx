@@ -12,6 +12,7 @@ import {
   type LineInformation,
   computeLineInformation,
   structuredPatchToChange,
+  computeChangeCount,
 } from './compute-lines.js';
 import { Expand } from './expand.js';
 import computeStyles, {
@@ -958,6 +959,8 @@ class DiffViewer extends React.Component<
     diffNodes: ReactElement[];
     lineInformation: LineInformation[];
     blocks: Block[];
+    additions: number;
+    deletions: number;
   } => {
     const {
       oldValue,
@@ -971,20 +974,28 @@ class DiffViewer extends React.Component<
       structuredPatch,
     } = this.props;
 
-    // Skip diff computation if initially collapsed and not yet expanded
-    // This is a performance optimization for large files
-    if (!this.state.hasProcessed) {
-      return {
-        diffNodes: [],
-        lineInformation: [],
-        blocks: [],
-      };
-    }
-
     // Convert StructuredPatch to Change[] if provided
     let preComputedDiff: Change[] | undefined;
     if (structuredPatch && typeof oldValue === 'string' && typeof newValue === 'string') {
       preComputedDiff = structuredPatchToChange(structuredPatch, oldValue, newValue);
+    }
+
+    // Skip full diff computation if initially collapsed and not yet expanded
+    // But still compute lightweight change count for the summary banner
+    if (!this.state.hasProcessed) {
+      const { additions, deletions } = computeChangeCount(
+        oldValue,
+        newValue,
+        compareMethod,
+        preComputedDiff,
+      );
+      return {
+        diffNodes: [],
+        lineInformation: [],
+        blocks: [],
+        additions,
+        deletions,
+      };
     }
 
     const { lineInformation, diffLines } = this.computeLineInformationMemoized(
@@ -1044,10 +1055,23 @@ class DiffViewer extends React.Component<
           : this.renderInlineView(line, lineIndex);
       },
     );
+
+    // Count additions and deletions from lineInformation
+    let additions = 0;
+    let deletions = 0;
+    for (const l of lineInformation) {
+      if (l.left.type === DiffType.ADDED) additions++;
+      if (l.right.type === DiffType.ADDED) additions++;
+      if (l.left.type === DiffType.REMOVED) deletions++;
+      if (l.right.type === DiffType.REMOVED) deletions++;
+    }
+
     return {
       diffNodes,
       blocks,
       lineInformation,
+      additions,
+      deletions,
     };
   };
 
@@ -1089,22 +1113,8 @@ class DiffViewer extends React.Component<
       colSpanOnInlineView += 1;
     }
 
-    let deletions = 0;
-    let additions = 0;
-    for (const l of nodes.lineInformation) {
-      if (l.left.type === DiffType.ADDED) {
-        additions++;
-      }
-      if (l.right.type === DiffType.ADDED) {
-        additions++;
-      }
-      if (l.left.type === DiffType.REMOVED) {
-        deletions++;
-      }
-      if (l.right.type === DiffType.REMOVED) {
-        deletions++;
-      }
-    }
+    // Use change counts from renderDiff (computed efficiently)
+    const { additions, deletions } = nodes;
     const totalChanges = deletions + additions;
 
     const percentageAddition = Math.round((additions / totalChanges) * 100);
