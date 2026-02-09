@@ -15,16 +15,21 @@ export function computeHiddenBlocks(
   diffLines: number[],
   extraLines: number,
 ): HiddenBlocks {
+  const visibleLines = new Set<number>();
+  for (const diffLine of diffLines) {
+    const start = Math.max(0, diffLine - extraLines);
+    const end = Math.min(lineInformation.length - 1, diffLine + extraLines);
+    for (let i = start; i <= end; i++) {
+      visibleLines.add(i);
+    }
+  }
+
   let newBlockIndex = 0;
   let currentBlock: Block | undefined;
   const lineBlocks: Record<number, number> = {};
   const blocks: Block[] = [];
-  lineInformation.forEach((line, lineIndex) => {
-    const isDiffLine = diffLines.some(
-      (diffLine) =>
-        diffLine >= lineIndex - extraLines &&
-        diffLine <= lineIndex + extraLines,
-    );
+  lineInformation.forEach((_line, lineIndex) => {
+    const isDiffLine = visibleLines.has(lineIndex);
     if (!isDiffLine && currentBlock === undefined) {
       // block begins
       currentBlock = {
