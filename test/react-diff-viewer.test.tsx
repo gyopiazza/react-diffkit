@@ -47,4 +47,22 @@ describe("Testing react diff viewer", (): void => {
 
     expect(node.getAllByRole("row").length).toEqual(26);
   });
+
+  it("should show summary banner by default", (): void => {
+    const { container } = render(
+      <DiffViewer oldValue={oldCode} newValue={newCode} />,
+    );
+
+    const summaryBanner = container.querySelector('[role="button"]');
+    expect(summaryBanner).toBeTruthy();
+  });
+
+  it("should hide summary banner when hideSummary is true", (): void => {
+    const { container } = render(
+      <DiffViewer oldValue={oldCode} newValue={newCode} hideSummary={true} />,
+    );
+
+    const summaryBanner = container.querySelector('[role="button"]');
+    expect(summaryBanner).toBe(null);
+  });
 });

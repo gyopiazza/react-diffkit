@@ -127,6 +127,11 @@ export interface ReactDiffViewerProps {
    * Used to describe the thing being diffed
    */
   summary?: string | ReactElement;
+  /**
+   * Hide the summary banner that shows change count, blocks, and file collapse chevron.
+   * When true, the summary bar is not rendered. Default: false (show summary)
+   */
+  hideSummary?: boolean;
   // Title for left column
   leftTitle?: string | ReactElement;
   // Title for left column
@@ -187,6 +192,13 @@ export interface ReactDiffViewerProps {
    * Use diff.structuredPatch() or diff.parsePatch() to generate this.
    */
   structuredPatch?: StructuredPatch;
+  /**
+   * Align line numbers in a single column in inline view.
+   * When enabled, both old and new line numbers are displayed in one column instead of two separate columns.
+   * Only affects inline view (splitView={false}).
+   * Default: false
+   */
+  alignLineNumbers?: boolean;
 }
 
 export interface ReactDiffViewerState {
@@ -220,6 +232,7 @@ class DiffViewer extends React.Component<
     useDarkTheme: false,
     linesOffset: 0,
     nonce: '',
+    hideSummary: false,
   };
 
   public constructor(props: ReactDiffViewerProps) {
@@ -557,10 +570,14 @@ class DiffViewer extends React.Component<
               [this.styles.highlightedGutter]: highlightLine,
             })}
           >
-            <pre className={this.styles.lineNumber}>{lineNumber}</pre>
+            <pre className={this.styles.lineNumber}>
+              {this.props.alignLineNumbers && !this.props.splitView
+                ? (lineNumber || additionalLineNumber)
+                : lineNumber}
+            </pre>
           </td>
         )}
-        {!this.props.splitView && !this.props.hideLineNumbers && (
+        {!this.props.splitView && !this.props.hideLineNumbers && !this.props.alignLineNumbers && (
           <td
             onClick={
               additionalLineNumber &&
@@ -737,7 +754,7 @@ class DiffViewer extends React.Component<
           </tr>
           {Boolean(widgetsLeft) && (
             <tr>
-              <td colSpan={6}>{widgetsLeft}</td>
+              <td colSpan={this.props.alignLineNumbers ? 5 : 6}>{widgetsLeft}</td>
             </tr>
           )}
           <tr
@@ -758,7 +775,7 @@ class DiffViewer extends React.Component<
           </tr>
           {Boolean(widgetsRight) && (
             <tr>
-              <td colSpan={6}>{widgetsRight}</td>
+              <td colSpan={this.props.alignLineNumbers ? 5 : 6}>{widgetsRight}</td>
             </tr>
           )}
         </React.Fragment>
@@ -813,7 +830,7 @@ class DiffViewer extends React.Component<
         </tr>
         {Boolean(widgets) && (
           <tr>
-            <td colSpan={6}>{widgets}</td>
+            <td colSpan={this.props.alignLineNumbers ? 5 : 6}>{widgets}</td>
           </tr>
         )}
       </React.Fragment>
@@ -1113,6 +1130,10 @@ class DiffViewer extends React.Component<
       colSpanOnInlineView += 1;
     }
 
+    if (this.props.alignLineNumbers && !this.props.splitView) {
+      colSpanOnInlineView -= 1;  // One less column when line numbers are aligned
+    }
+
     // Use change counts from renderDiff (computed efficiently)
     const { additions, deletions } = nodes;
     const totalChanges = deletions + additions;
@@ -1141,68 +1162,70 @@ class DiffViewer extends React.Component<
 
     return (
       <div>
-        <div
-          className={this.styles.summary}
-          role={'button'}
-          tabIndex={0}
-          aria-label={this.getFileCollapsedState() ? "Expand file diff" : "Collapse file diff"}
-          onClick={() => {
-            const currentState = this.getFileCollapsedState();
-            const newState = !currentState;
-
-            if (this.isFileCollapseControlled()) {
-              // Controlled mode: only fire callback, parent updates prop
-              this.props.onFileCollapseChange?.(newState);
-            } else {
-              // Uncontrolled mode: update state AND fire callback
-              this.setState({ isFileCollapsed: newState });
-              this.props.onFileCollapseChange?.(newState);
-            }
-          }}
-          onKeyDown={(e: React.KeyboardEvent) => {
-            // Handle Enter and Space keys for accessibility
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
+        {!this.props.hideSummary ? (
+          <div
+            className={this.styles.summary}
+            role={'button'}
+            tabIndex={0}
+            aria-label={this.getFileCollapsedState() ? "Expand file diff" : "Collapse file diff"}
+            onClick={() => {
               const currentState = this.getFileCollapsedState();
               const newState = !currentState;
 
               if (this.isFileCollapseControlled()) {
+                // Controlled mode: only fire callback, parent updates prop
                 this.props.onFileCollapseChange?.(newState);
               } else {
+                // Uncontrolled mode: update state AND fire callback
                 this.setState({ isFileCollapsed: newState });
                 this.props.onFileCollapseChange?.(newState);
               }
-            }
-          }}
-        >
-          <button
-              type={'button'}
-              className={this.styles.allExpandButton}
-              onClick={(e) => {
-                e.stopPropagation();
-                this.setState({
-                  expandedBlocks: allExpanded
-                  ? []
-                  : nodes.blocks.map((b) => b.index),
-                });
-              }}
-              disabled={this.state.isCollapsed || this.getFileCollapsedState()}
-              aria-label={allExpanded ? "Collapse all code blocks" : "Expand all code blocks"}
-            >
-              {allExpanded ? <Fold /> : <Expand />}
-            </button>
-          {totalChanges}
-          <div style={{ display: 'flex', gap: '1px' }}>{blocks}</div>
-          {this.props.summary ? <span>{this.props.summary}</span> : null}
-          <div style={{marginLeft: 'auto'}}>
-            <span
-              style={{display: 'flex', alignItems: 'center'}}
-              aria-label={this.getFileCollapsedState() ? 'File diff is collapsed' : 'File diff is expanded'}
-            >
-              {this.getFileCollapsedState() ? <ChevronUp /> : <ChevronDown />}
-            </span>
+            }}
+            onKeyDown={(e: React.KeyboardEvent) => {
+              // Handle Enter and Space keys for accessibility
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                const currentState = this.getFileCollapsedState();
+                const newState = !currentState;
+
+                if (this.isFileCollapseControlled()) {
+                  this.props.onFileCollapseChange?.(newState);
+                } else {
+                  this.setState({ isFileCollapsed: newState });
+                  this.props.onFileCollapseChange?.(newState);
+                }
+              }
+            }}
+          >
+            <button
+                type={'button'}
+                className={this.styles.allExpandButton}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  this.setState({
+                    expandedBlocks: allExpanded
+                    ? []
+                    : nodes.blocks.map((b) => b.index),
+                  });
+                }}
+                disabled={this.state.isCollapsed || this.getFileCollapsedState()}
+                aria-label={allExpanded ? "Collapse all code blocks" : "Expand all code blocks"}
+              >
+                {allExpanded ? <Fold /> : <Expand />}
+              </button>
+            {totalChanges}
+            <div style={{ display: 'flex', gap: '1px' }}>{blocks}</div>
+            {this.props.summary ? <span>{this.props.summary}</span> : null}
+            <div style={{marginLeft: 'auto'}}>
+              <span
+                style={{display: 'flex', alignItems: 'center'}}
+                aria-label={this.getFileCollapsedState() ? 'File diff is collapsed' : 'File diff is expanded'}
+              >
+                {this.getFileCollapsedState() ? <ChevronUp /> : <ChevronDown />}
+              </span>
+            </div>
           </div>
-        </div>
+        ) : null}
         {this.state.isCollapsed ? (
           <table
             className={cn(this.styles.diffContainer, {
@@ -1232,7 +1255,7 @@ class DiffViewer extends React.Component<
             <tbody>
               <tr>
                 {!this.props.hideLineNumbers ? <td width={'50px'} /> : null}
-                {!splitView && !this.props.hideLineNumbers ? (
+                {!splitView && !this.props.hideLineNumbers && !this.props.alignLineNumbers ? (
                   <td width={'50px'} />
                 ) : null}
                 {this.props.renderGutter ? <td width={'50px'} /> : null}
