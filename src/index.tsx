@@ -1159,6 +1159,7 @@ class DiffViewer extends React.Component<
     }
     const allExpanded =
       this.state.expandedBlocks.length === nodes.blocks.length;
+    const isFileCollapsed = this.getFileCollapsedState();
 
     return (
       <div>
@@ -1167,9 +1168,9 @@ class DiffViewer extends React.Component<
             className={this.styles.summary}
             role={'button'}
             tabIndex={0}
-            aria-label={this.getFileCollapsedState() ? "Expand file diff" : "Collapse file diff"}
+            aria-label={isFileCollapsed ? "Expand file diff" : "Collapse file diff"}
             onClick={() => {
-              const currentState = this.getFileCollapsedState();
+              const currentState = isFileCollapsed;
               const newState = !currentState;
 
               if (this.isFileCollapseControlled()) {
@@ -1185,7 +1186,7 @@ class DiffViewer extends React.Component<
               // Handle Enter and Space keys for accessibility
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
-                const currentState = this.getFileCollapsedState();
+                const currentState = isFileCollapsed;
                 const newState = !currentState;
 
                 if (this.isFileCollapseControlled()) {
@@ -1208,7 +1209,7 @@ class DiffViewer extends React.Component<
                     : nodes.blocks.map((b) => b.index),
                   });
                 }}
-                disabled={this.state.isCollapsed || this.getFileCollapsedState()}
+                  disabled={this.state.isCollapsed || isFileCollapsed}
                 aria-label={allExpanded ? "Collapse all code blocks" : "Expand all code blocks"}
               >
                 {allExpanded ? <Fold /> : <Expand />}
@@ -1219,14 +1220,15 @@ class DiffViewer extends React.Component<
             <div style={{marginLeft: 'auto'}}>
               <span
                 style={{display: 'flex', alignItems: 'center'}}
-                aria-label={this.getFileCollapsedState() ? 'File diff is collapsed' : 'File diff is expanded'}
+                aria-label={isFileCollapsed ? 'File diff is collapsed' : 'File diff is expanded'}
               >
-                {this.getFileCollapsedState() ? <ChevronUp /> : <ChevronDown />}
+                {isFileCollapsed ? <ChevronUp /> : <ChevronDown />}
               </span>
             </div>
           </div>
         ) : null}
-        {this.state.isCollapsed ? (
+        {!isFileCollapsed ? (
+          this.state.isCollapsed ? (
           <table
             className={cn(this.styles.diffContainer, {
               [this.styles.splitView]: splitView,
@@ -1234,7 +1236,7 @@ class DiffViewer extends React.Component<
           >
             <tbody>{this.renderCollapsedPlaceholder(totalChanges)}</tbody>
           </table>
-        ) : !this.getFileCollapsedState() ? (
+          ) : (
           <table
             className={cn(this.styles.diffContainer, {
               [this.styles.splitView]: splitView,
@@ -1299,6 +1301,7 @@ class DiffViewer extends React.Component<
               {nodes.diffNodes}
             </tbody>
           </table>
+          )
         ) : null}
       </div>
     );
