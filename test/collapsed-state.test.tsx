@@ -81,6 +81,30 @@ describe("Collapsed State Feature", (): void => {
     expect(banner).toBeTruthy();
   });
 
+  it("should allow summary click to hide/show collapsed placeholder before loading diff", (): void => {
+    const { container } = render(
+      <DiffViewer
+        oldValue={oldCode}
+        newValue={newCode}
+        initiallyCollapsed={true}
+      />,
+    );
+
+    // Placeholder is visible initially
+    let expandButton = container.querySelector('button[aria-label="Load diff"]');
+    expect(expandButton).toBeTruthy();
+
+    // Collapse file via summary: placeholder should be hidden with table
+    const banner = container.querySelector('[role="button"]');
+    fireEvent.click(banner!);
+    expect(container.querySelector('table')).toBeNull();
+
+    // Expand file via summary: placeholder should return
+    fireEvent.click(banner!);
+    expandButton = container.querySelector('button[aria-label="Load diff"]');
+    expect(expandButton).toBeTruthy();
+  });
+
   it("should use custom collapsedMessageRenderer when provided", (): void => {
     const customRenderer = (totalChanges: number) => (
       <span>Custom message: {totalChanges} changes</span>

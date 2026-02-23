@@ -143,6 +143,47 @@ describe('File Collapse - Controlled Mode', () => {
     expect(table).not.toBeNull();
   });
 
+  it('should hide and show lazy collapsed placeholder when controlled fileCollapsed changes', () => {
+    const { container, rerender } = render(
+      <DiffViewer
+        oldValue={oldValue}
+        newValue={newValue}
+        initiallyCollapsed={true}
+        fileCollapsed={false}
+        onFileCollapseChange={() => {}}
+      />
+    );
+
+    // Expanded file + lazy collapsed: placeholder should be visible
+    let loadButton = container.querySelector('button[aria-label="Load diff"]');
+    expect(loadButton).not.toBeNull();
+
+    // Parent collapses file: whole table should hide
+    rerender(
+      <DiffViewer
+        oldValue={oldValue}
+        newValue={newValue}
+        initiallyCollapsed={true}
+        fileCollapsed={true}
+        onFileCollapseChange={() => {}}
+      />
+    );
+    expect(container.querySelector('table')).toBeNull();
+
+    // Parent expands file: placeholder should show again
+    rerender(
+      <DiffViewer
+        oldValue={oldValue}
+        newValue={newValue}
+        initiallyCollapsed={true}
+        fileCollapsed={false}
+        onFileCollapseChange={() => {}}
+      />
+    );
+    loadButton = container.querySelector('button[aria-label="Load diff"]');
+    expect(loadButton).not.toBeNull();
+  });
+
   it('should handle fileCollapsed=false as controlled mode (not undefined)', () => {
     const handleChange = vi.fn();
     const { container } = render(
